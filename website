@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -25,30 +25,157 @@
 
         h1 {
             text-align: center;
-            color: white;
+            color: #fff;
             margin-bottom: 10px;
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
         .subtitle {
             text-align: center;
-            color: #f0f0f0;
+            color: #a0a0a0;
             margin-bottom: 30px;
             font-size: 1.1em;
         }
 
-        .controls {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        .admin-btn-container {
+            text-align: center;
             margin-bottom: 30px;
         }
 
-        .controls h2 {
+        .admin-btn {
+            background: #0f3460;
+            color: #fff;
+            padding: 10px 25px;
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .admin-btn:hover {
+            background: #e94560;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+        }
+
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #e94560;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(233, 69, 96, 0.3);
+        }
+
+        .modal h2 {
+            color: #fff;
             margin-bottom: 20px;
-            color: #333;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #0f3460;
+            border: 2px solid #533483;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-login {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-login:hover {
+            background: #c23650;
+        }
+
+        .btn-cancel {
+            background: #533483;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #412661;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            display: none;
+            background: #0f3460;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            border: 2px solid #533483;
+        }
+
+        .admin-panel h2 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logout-btn {
+            background: #e94560;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            background: #c23650;
         }
 
         .input-group {
@@ -58,31 +185,35 @@
             flex-wrap: wrap;
         }
 
-        input, select, button {
+        input, select {
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #533483;
             border-radius: 8px;
             font-size: 1em;
+            background: #1a1a2e;
+            color: #fff;
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #e94560;
         }
 
         button {
-            background: #667eea;
+            padding: 12px;
+            background: #e94560;
             color: white;
             border: none;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
+            border-radius: 8px;
         }
 
         button:hover {
-            background: #764ba2;
+            background: #c23650;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
         }
 
         .btn-refresh {
@@ -102,129 +233,162 @@
         }
 
         .leaderboard {
-            background: white;
+            background: #0f3460;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 2px solid #533483;
+        }
+
+        .leaderboard-scroll {
+            overflow-x: auto;
+            margin: -10px;
+            padding: 10px;
         }
 
         .leaderboard h2 {
             margin-bottom: 20px;
-            color: #333;
+            color: #fff;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .last-updated {
             font-size: 0.9em;
-            color: #666;
+            color: #a0a0a0;
             font-weight: normal;
         }
 
-        .participant {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 10px;
-            border-left: 5px solid #667eea;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #fff;
+        }
+
+        thead {
+            background: #1a1a2e;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid #e94560;
+            white-space: nowrap;
+        }
+
+        th.rank-col { width: 60px; }
+        th.name-col { 
+            text-align: left; 
+            min-width: 150px;
+            position: sticky;
+            left: 0;
+            background: #1a1a2e;
+            z-index: 11;
+        }
+        th.total-col { width: 80px; }
+        th.medal-col { width: 60px; }
+        th.countries-col { min-width: 200px; }
+        th.actions-col { width: 80px; }
+
+        tbody tr {
+            border-bottom: 1px solid #533483;
             transition: all 0.3s;
         }
 
-        .participant:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        tbody tr:hover {
+            background: rgba(233, 69, 96, 0.1);
         }
 
-        .participant-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+        td {
+            padding: 15px 10px;
+            text-align: center;
+        }
+
+        td.name-cell {
+            text-align: left;
+            font-weight: bold;
+            font-size: 1.1em;
+            position: sticky;
+            left: 0;
+            background: #0f3460;
+            z-index: 5;
+        }
+
+        tbody tr:hover td.name-cell {
+            background: rgba(15, 52, 96, 0.95);
         }
 
         .rank {
-            font-size: 2em;
+            font-size: 1.5em;
             font-weight: bold;
-            color: #667eea;
-            min-width: 50px;
+            color: #e94560;
         }
 
         .rank.first { color: #FFD700; }
         .rank.second { color: #C0C0C0; }
         .rank.third { color: #CD7F32; }
 
-        .participant-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #333;
-            flex-grow: 1;
-        }
-
         .total-medals {
-            font-size: 2em;
+            font-size: 1.8em;
             font-weight: bold;
-            color: #667eea;
-            margin-right: 20px;
+            color: #e94560;
         }
 
-        .medal-breakdown {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 10px;
+        .medal-cell {
+            font-size: 1.2em;
         }
 
-        .medal-count {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 1.1em;
-        }
-
-        .medal-icon {
-            font-size: 1.3em;
-        }
-
-        .countries {
+        .countries-cell {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 5px;
+            justify-content: center;
+            min-height: 40px;
         }
 
         .country-tag {
-            background: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: #16213e;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            border: 1px solid #533483;
+            white-space: nowrap;
         }
 
         .country-medals {
-            color: #667eea;
+            color: #e94560;
             font-weight: bold;
-            margin-left: 5px;
+            margin-left: 3px;
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #666;
+            color: #a0a0a0;
         }
 
         .empty-state h3 {
             font-size: 1.5em;
             margin-bottom: 10px;
+            color: #fff;
         }
 
         .delete-btn {
             background: #ef4444;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 8px 12px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 0.9em;
+            white-space: nowrap;
         }
 
         .delete-btn:hover {
@@ -234,7 +398,7 @@
         @media (max-width: 768px) {
             h1 { font-size: 1.8em; }
             .input-group { flex-direction: column; }
-            .participant-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .participant-header { flex-direction: column; align-items: flex-start; }
             .medal-breakdown { flex-direction: column; gap: 10px; }
         }
     </style>
@@ -244,8 +408,28 @@
         <h1>🏅 Family Olympic Draft Tracker</h1>
         <p class="subtitle">Milano Cortina 2026 Winter Olympics</p>
 
-        <div class="controls">
-            <h2>Add Family Member</h2>
+        <div class="admin-btn-container">
+            <button class="admin-btn" onclick="showLoginModal()">🔐 Admin Login</button>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <h2>Admin Login</h2>
+                <input type="password" id="passwordInput" placeholder="Enter password" onkeypress="if(event.key==='Enter') login()">
+                <div class="modal-buttons">
+                    <button class="btn-login" onclick="login()">Login</button>
+                    <button class="btn-cancel" onclick="closeLoginModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="admin-panel">
+            <div class="admin-header">
+                <h2>Admin Panel</h2>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
             <div class="input-group">
                 <input type="text" id="nameInput" placeholder="Family member name" style="flex: 1;">
                 <select id="countrySelect" style="flex: 1;">
@@ -253,7 +437,7 @@
                 </select>
                 <button onclick="addCountryToDraft()">Add Country</button>
             </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button onclick="fetchMedalData()" class="btn-refresh">🔄 Refresh Medal Counts</button>
                 <button onclick="clearAllData()" class="btn-danger">🗑️ Clear All Data</button>
             </div>
@@ -264,11 +448,16 @@
                 <span>🏆 Leaderboard</span>
                 <span class="last-updated" id="lastUpdated"></span>
             </h2>
-            <div id="leaderboardContent"></div>
+            <div class="leaderboard-scroll">
+                <div id="leaderboardContent"></div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Admin password (you can change this)
+        const ADMIN_PASSWORD = 'olympics2026';
+
         // Available countries based on 2026 Winter Olympics participants
         const countries = [
             'Norway', 'Italy', 'Japan', 'Sweden', 'Czechia', 'Switzerland', 'United States of America',
@@ -277,7 +466,7 @@
             'Poland', 'Slovakia', 'Belgium', 'Spain', 'New Zealand', 'Latvia', 'Ukraine'
         ];
 
-        // Medal data (will be fetched from Olympics.com)
+        // Medal data - CURRENT as of Feb 8, 2026 from olympics.com
         let medalData = {
             'Norway': { gold: 2, silver: 1, bronze: 2 },
             'Italy': { gold: 1, silver: 1, bronze: 3 },
@@ -296,6 +485,7 @@
 
         // Family drafts stored in localStorage
         let familyDrafts = JSON.parse(localStorage.getItem('olympicDrafts')) || {};
+        let isLoggedIn = false;
 
         // Initialize
         function init() {
@@ -314,7 +504,44 @@
             });
         }
 
+        // Login functionality
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('passwordInput').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+        }
+
+        function login() {
+            const password = document.getElementById('passwordInput').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                document.getElementById('adminPanel').style.display = 'block';
+                closeLoginModal();
+                alert('Welcome, Admin!');
+            } else {
+                alert('Incorrect password!');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            document.getElementById('adminPanel').style.display = 'none';
+            alert('Logged out successfully!');
+        }
+
         function addCountryToDraft() {
+            if (!isLoggedIn) {
+                alert('Please login as admin first!');
+                return;
+            }
+
             const name = document.getElementById('nameInput').value.trim();
             const country = document.getElementById('countrySelect').value;
 
@@ -369,7 +596,7 @@
                 content.innerHTML = `
                     <div class="empty-state">
                         <h3>No participants yet!</h3>
-                        <p>Add family members and their drafted countries to get started.</p>
+                        <p>Admin needs to add family members and their drafted countries to get started.</p>
                     </div>
                 `;
                 return;
@@ -384,8 +611,25 @@
             // Sort by total medals
             standings.sort((a, b) => b.medals.total - a.medals.total);
 
-            // Generate HTML
-            content.innerHTML = standings.map((participant, index) => {
+            // Generate table HTML
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="rank-col">Rank</th>
+                            <th class="name-col">Name</th>
+                            <th class="total-col">Total</th>
+                            <th class="medal-col">🥇</th>
+                            <th class="medal-col">🥈</th>
+                            <th class="medal-col">🥉</th>
+                            <th class="countries-col">Countries</th>
+                            ${isLoggedIn ? '<th class="actions-col">Actions</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            standings.forEach((participant, index) => {
                 const rank = index + 1;
                 let rankClass = '';
                 if (rank === 1) rankClass = 'first';
@@ -395,45 +639,39 @@
                 const countriesHTML = participant.countries.map(country => {
                     const countryMedals = medalData[country] || { gold: 0, silver: 0, bronze: 0 };
                     const countryTotal = countryMedals.gold + countryMedals.silver + countryMedals.bronze;
-                    return `
-                        <div class="country-tag">
-                            ${country}
-                            <span class="country-medals">(${countryTotal})</span>
-                        </div>
-                    `;
+                    return `<span class="country-tag">${country} <span class="country-medals">(${countryTotal})</span></span>`;
                 }).join('');
 
-                return `
-                    <div class="participant">
-                        <div class="participant-header">
-                            <span class="rank ${rankClass}">#${rank}</span>
-                            <span class="participant-name">${participant.name}</span>
-                            <span class="total-medals">${participant.medals.total}</span>
-                            <button class="delete-btn" onclick="deleteParticipant('${participant.name}')">Delete</button>
-                        </div>
-                        <div class="medal-breakdown">
-                            <div class="medal-count">
-                                <span class="medal-icon">🥇</span>
-                                <span>${participant.medals.gold}</span>
-                            </div>
-                            <div class="medal-count">
-                                <span class="medal-icon">🥈</span>
-                                <span>${participant.medals.silver}</span>
-                            </div>
-                            <div class="medal-count">
-                                <span class="medal-icon">🥉</span>
-                                <span>${participant.medals.bronze}</span>
-                            </div>
-                        </div>
-                        <div class="countries">
-                            ${countriesHTML}
-                        </div>
-                    </div>
+                const deleteBtn = isLoggedIn ? `<button class="delete-btn" onclick="deleteParticipant('${participant.name}')">Delete</button>` : '';
+
+                tableHTML += `
+                    <tr>
+                        <td><span class="rank ${rankClass}">#${rank}</span></td>
+                        <td class="name-cell">${participant.name}</td>
+                        <td><span class="total-medals">${participant.medals.total}</span></td>
+                        <td class="medal-cell">${participant.medals.gold}</td>
+                        <td class="medal-cell">${participant.medals.silver}</td>
+                        <td class="medal-cell">${participant.medals.bronze}</td>
+                        <td><div class="countries-cell">${countriesHTML}</div></td>
+                        ${isLoggedIn ? `<td>${deleteBtn}</td>` : ''}
+                    </tr>
                 `;
-            }).join('');
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            content.innerHTML = tableHTML;
         }
 
         function deleteParticipant(name) {
+            if (!isLoggedIn) {
+                alert('Please login as admin first!');
+                return;
+            }
+
             if (confirm(`Remove ${name} from the tracker?`)) {
                 delete familyDrafts[name];
                 saveDrafts();
@@ -442,6 +680,11 @@
         }
 
         function clearAllData() {
+            if (!isLoggedIn) {
+                alert('Please login as admin first!');
+                return;
+            }
+
             if (confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
                 familyDrafts = {};
                 saveDrafts();
@@ -450,27 +693,114 @@
         }
 
         async function fetchMedalData() {
+            if (!isLoggedIn) {
+                alert('Please login as admin first!');
+                return;
+            }
+
             const btn = event.target;
+            const originalText = btn.textContent;
             btn.textContent = '⏳ Fetching...';
             btn.disabled = true;
 
             try {
-                // In a real implementation, you'd fetch from Olympics.com API
-                // For now, we'll simulate it with the current data
+                // Use Claude API to scrape the Olympics medal table page
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 2000,
+                        tools: [{
+                            type: "web_search_20250305",
+                            name: "web_search"
+                        }],
+                        messages: [{
+                            role: "user",
+                            content: "Go to https://olympics.com/en/olympic-games/milano-cortina-2026/medals and get the current medal table. Return ONLY a valid JSON object with exact country names as they appear on the site (like 'Norway', 'Italy', 'United States of America', 'Czechia', etc.) as keys and medal counts as values. Use this EXACT format with no extra text: {\"Norway\": {\"gold\": 3, \"silver\": 1, \"bronze\": 2}, \"Italy\": {\"gold\": 1, \"silver\": 2, \"bronze\": 4}}. Include all countries with medals."
+                        }]
+                    })
+                });
+
+                const data = await response.json();
                 
-                // You could use a proxy or CORS-enabled endpoint to fetch real data
-                // const response = await fetch('https://olympics.com/en/milano-cortina-2026/medals');
+                // Parse the response
+                let medalText = '';
+                if (data.content) {
+                    for (let block of data.content) {
+                        if (block.type === 'text') {
+                            medalText += block.text;
+                        }
+                    }
+                }
+
+                // Extract JSON from the response
+                const jsonMatch = medalText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const parsedMedals = JSON.parse(jsonMatch[0]);
+                    medalData = parsedMedals;
+                    updateLeaderboard();
+                    updateLastUpdated();
+                    alert('✅ Medal data updated successfully!');
+                } else {
+                    throw new Error('Could not parse medal data from response');
+                }
                 
-                alert('Medal data refreshed! (In production, this would fetch live data from Olympics.com)');
-                
-                updateLeaderboard();
-                updateLastUpdated();
             } catch (error) {
-                alert('Error fetching medal data. Please try again.');
-                console.error(error);
+                console.error('Error fetching medal data:', error);
+                alert('❌ Error fetching medal data. Using current cached data. Try again later.');
             } finally {
-                btn.textContent = '🔄 Refresh Medal Counts';
+                btn.textContent = originalText;
                 btn.disabled = false;
+            }
+        }
+
+        // Auto-fetch medal data on page load
+        async function autoFetchMedalData() {
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 2000,
+                        tools: [{
+                            type: "web_search_20250305",
+                            name: "web_search"
+                        }],
+                        messages: [{
+                            role: "user",
+                            content: "Go to https://olympics.com/en/olympic-games/milano-cortina-2026/medals and get the current medal table. Return ONLY a valid JSON object with exact country names as they appear on the site (like 'Norway', 'Italy', 'United States of America', 'Czechia', etc.) as keys and medal counts as values. Use this EXACT format with no extra text: {\"Norway\": {\"gold\": 3, \"silver\": 1, \"bronze\": 2}, \"Italy\": {\"gold\": 1, \"silver\": 2, \"bronze\": 4}}. Include all countries with medals."
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                let medalText = '';
+                if (data.content) {
+                    for (let block of data.content) {
+                        if (block.type === 'text') {
+                            medalText += block.text;
+                        }
+                    }
+                }
+
+                const jsonMatch = medalText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const parsedMedals = JSON.parse(jsonMatch[0]);
+                    medalData = parsedMedals;
+                    updateLeaderboard();
+                    updateLastUpdated();
+                    console.log('Medal data auto-updated successfully');
+                }
+            } catch (error) {
+                console.error('Auto-fetch error:', error);
+                // Continue with cached data if fetch fails
             }
         }
 
@@ -486,8 +816,17 @@
             document.getElementById('lastUpdated').textContent = `Last updated: ${formatted}`;
         }
 
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeLoginModal();
+            }
+        }
+
         // Initialize on load
         init();
+        autoFetchMedalData();
     </script>
 </body>
 </html>
