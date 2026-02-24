@@ -2,785 +2,873 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRIP 3D — Slope Slip Simulator</title>
+<title>GRIP 3D</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  :root {
-    --bg:#06060e; --panel:rgba(10,10,20,0.96); --border:#1e1e36;
-    --accent:#f0c040; --danger:#ff3030; --safe:#30ff80;
-    --blue:#4080ff; --text:#dde0f5; --muted:#50506a;
-  }
   *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;}
-  #cv{position:fixed;inset:0;z-index:0;display:block;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:'IBM Plex Mono',monospace;}
+  #three{position:fixed;inset:0;z-index:0;}
 
   /* ── HUD ── */
-  #hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:grid;
-    grid-template-columns:250px 1fr 230px;grid-template-rows:48px 1fr 32px;}
+  #hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:flex;flex-direction:column;}
+  #hdr{display:flex;align-items:center;gap:14px;padding:0 20px;height:48px;
+    background:linear-gradient(to bottom,rgba(6,6,14,.97),transparent);pointer-events:auto;}
+  #hdr h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:5px;color:#f0c040;}
+  #hdr small{font-size:.58rem;color:#44446a;letter-spacing:2px;}
+  #mid{flex:1;display:flex;}
+  #lp{width:240px;padding:12px 14px;background:linear-gradient(to right,rgba(6,6,14,.97) 75%,transparent);
+    overflow-y:auto;pointer-events:auto;scrollbar-width:thin;}
+  #rp{width:220px;margin-left:auto;padding:12px 14px;
+    background:linear-gradient(to left,rgba(6,6,14,.97) 75%,transparent);pointer-events:auto;overflow-y:auto;}
+  #ft{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+    background:linear-gradient(to top,rgba(6,6,14,.9),transparent);font-size:.55rem;color:#44446a;letter-spacing:1px;}
 
-  #hdr{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 22px;
-    background:linear-gradient(to bottom,rgba(6,6,14,.96) 55%,transparent);pointer-events:auto;}
-  #hdr h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:5px;color:var(--accent);}
-  #hdr span{font-size:.6rem;color:var(--muted);letter-spacing:2px;}
+  .pt{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:3px;color:#f0c040;margin:6px 0 10px;}
+  .ctrl{margin-bottom:12px;}
+  .cl{display:block;font-size:.55rem;color:#44446a;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+  .bv{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#dde0f5;line-height:1;}
+  .bv small{font-family:'IBM Plex Mono',monospace;font-size:.55rem;color:#44446a;}
 
-  #lp{background:linear-gradient(to right,rgba(10,10,20,.97) 78%,transparent);
-    padding:12px 14px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;pointer-events:auto;}
-  #rp{background:linear-gradient(to left,rgba(10,10,20,.97) 78%,transparent);
-    padding:12px 14px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;pointer-events:auto;}
-  #ft{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 22px;
-    background:linear-gradient(to top,rgba(6,6,14,.9) 55%,transparent);font-size:.58rem;color:var(--muted);letter-spacing:1px;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:#1e1e36;border-radius:2px;outline:none;margin-top:4px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:#f0c040;border-radius:50%;cursor:pointer;}
+  select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde0f5;
+    padding:5px 7px;font-family:'IBM Plex Mono',monospace;font-size:.65rem;border-radius:2px;outline:none;}
 
-  .pt{font-family:'Bebas Neue',sans-serif;font-size:.82rem;letter-spacing:3px;color:var(--accent);margin-bottom:10px;margin-top:4px;}
-  .ctrl{margin-bottom:13px;}
-  .cl{font-size:.57rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;display:block;}
-  .bv{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--text);line-height:1;}
-  .bv small{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:3px;}
+  .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px;margin-top:3px;}
+  .xb{border:1px solid #1e1e36;background:rgba(6,6,14,.8);color:#44446a;padding:7px 3px;
+    cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:.58rem;text-align:center;
+    border-radius:2px;transition:all .12s;line-height:1.35;pointer-events:auto;}
+  .xb:hover{border-color:#f0c040;color:#f0c040;}
+  .xb.ca{background:rgba(240,192,64,.1);color:#f0c040;border-color:#f0c040;font-weight:600;}
+  .xb.ga{background:rgba(64,128,255,.1);color:#4080ff;border-color:#4080ff;font-weight:600;}
+  .nl{font-size:.52rem;color:#44446a;line-height:1.5;margin-top:4px;min-height:1.5em;}
 
-  input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:var(--border);border-radius:2px;outline:none;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--accent);border-radius:50%;cursor:pointer;}
-  select{width:100%;background:rgba(10,10,20,.9);border:1px solid var(--border);color:var(--text);
-    padding:5px 7px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;border-radius:2px;outline:none;}
-
-  .bg2{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-  .bg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;}
-  .xb{border:1px solid var(--border);background:rgba(10,10,20,.7);color:var(--muted);
-    padding:7px 4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:.6rem;
-    text-align:center;border-radius:2px;transition:all .12s;line-height:1.4;}
-  .xb:hover{border-color:var(--accent);color:var(--accent);}
-  .xb.ca{background:rgba(240,192,64,.12);color:var(--accent);border-color:var(--accent);font-weight:600;}
-  .xb.ga{background:rgba(64,128,255,.12);color:var(--blue);border-color:var(--blue);font-weight:600;}
-  .nl{font-size:.54rem;color:var(--muted);line-height:1.5;margin-top:4px;min-height:1.6em;}
-
-  .br{width:100%;margin-top:9px;background:var(--accent);color:#000;border:none;
+  .rbtn{width:100%;margin-top:8px;background:#f0c040;color:#000;border:none;
     font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:3px;padding:9px;
-    cursor:pointer;border-radius:2px;transition:all .12s;pointer-events:auto;}
-  .br:hover{background:#ffd060;}
-  .br.stop{background:rgba(255,48,48,.12);color:var(--danger);border:1px solid var(--danger);}
-  .rst{width:100%;margin-top:4px;background:transparent;color:var(--muted);
-    border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;
-    font-size:.62rem;letter-spacing:2px;padding:6px;cursor:pointer;border-radius:2px;transition:all .12s;pointer-events:auto;}
-  .rst:hover{color:var(--text);border-color:var(--muted);}
+    cursor:pointer;border-radius:2px;pointer-events:auto;}
+  .rbtn:hover{background:#ffd060;}
+  .rbtn.stop{background:rgba(255,48,48,.1);color:#ff3030;border:1px solid #ff3030;}
+  .rstbtn{width:100%;margin-top:4px;background:transparent;color:#44446a;border:1px solid #1e1e36;
+    font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;padding:6px;
+    cursor:pointer;border-radius:2px;pointer-events:auto;}
+  .rstbtn:hover{color:#dde0f5;border-color:#44446a;}
 
-  .dr{display:flex;justify-content:space-between;align-items:flex-end;padding:6px 0;border-bottom:1px solid var(--border);}
-  .dl{font-size:.57rem;color:var(--muted);text-transform:uppercase;line-height:1.4;}
-  .dv{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;line-height:1;text-align:right;}
-  .dv.g{color:var(--safe);}.dv.w{color:var(--accent);}.dv.b{color:var(--danger);}
+  .dr{display:flex;justify-content:space-between;align-items:flex-end;padding:5px 0;border-bottom:1px solid #1a1a30;}
+  .dl{font-size:.55rem;color:#44446a;text-transform:uppercase;line-height:1.35;}
+  .dv{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;line-height:1;text-align:right;color:#dde0f5;}
+  .dv.g{color:#30ff80;}.dv.w{color:#f0c040;}.dv.b{color:#ff3030;}
 
-  .bw{margin-top:9px;}.bt{height:4px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:3px;}
-  .bf{height:100%;border-radius:3px;transition:width .1s,background .3s;}
-  .fb{margin-top:10px;padding:8px;background:rgba(6,6,14,.85);border:1px solid var(--border);
-    border-radius:2px;font-size:.54rem;color:var(--muted);line-height:1.9;}
-  .fb .ft{color:var(--accent);letter-spacing:2px;margin-bottom:3px;font-size:.56rem;}
+  .bt{height:4px;background:#1e1e36;border-radius:3px;overflow:hidden;margin-top:3px;}
+  .bf{height:100%;border-radius:3px;transition:width .1s,background .25s;}
 
-  /* overlays */
-  #slip-ov{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);
-    font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:8px;color:var(--danger);
-    text-shadow:0 0 40px #ff303099;opacity:0;pointer-events:none;z-index:20;transition:opacity .15s;}
-  #slip-ov.show{opacity:1;animation:fl .3s infinite alternate;}
+  /* Big overlays */
+  #sov{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);
+    font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:8px;
+    color:#ff3030;text-shadow:0 0 40px #ff303088;opacity:0;pointer-events:none;z-index:30;
+    transition:opacity .15s;white-space:nowrap;}
+  #sov.on{opacity:1;animation:fl .3s infinite alternate;}
   @keyframes fl{from{opacity:1}to{opacity:.2}}
-
-  #spdhud{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);
-    font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--danger);letter-spacing:4px;
-    opacity:0;transition:opacity .2s;z-index:20;pointer-events:none;text-shadow:0 0 20px #ff303077;}
-  #spdhud.show{opacity:1;}
-
-  #camhint{position:fixed;bottom:38px;left:50%;transform:translateX(-50%);
-    font-size:.56rem;color:var(--muted);letter-spacing:2px;z-index:15;pointer-events:none;}
+  #spd{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+    font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#ff3030;letter-spacing:4px;
+    text-shadow:0 0 20px #ff303066;opacity:0;z-index:30;pointer-events:none;}
+  #spd.on{opacity:1;}
+  #hint{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+    font-size:.54rem;color:#2a2a44;letter-spacing:2px;z-index:20;pointer-events:none;}
 </style>
 </head>
 <body>
-<canvas id="cv"></canvas>
 
-<div id="slip-ov">⚠ SLIPPING</div>
-<div id="spdhud"></div>
-<div id="camhint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+<div id="three"></div>
+
+<div id="sov">⚠ SLIPPING</div>
+<div id="spd"></div>
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
 
 <div id="hud">
   <div id="hdr">
-    <h1>GRIP</h1>
-    <span>3D INFINITE SLOPE — STATIC/KINETIC FRICTION + TREAD PHYSICS</span>
+    <h1>GRIP 3D</h1>
+    <small>INFINITE SLOPE — STATIC/KINETIC FRICTION + TREAD PHYSICS</small>
   </div>
-
-  <div id="lp">
-    <div class="pt">Parameters</div>
-    <div class="ctrl">
-      <span class="cl">Slope Angle</span>
-      <input type="range" id="sl-ang" min="0" max="80" value="15" step="0.5">
-      <div class="bv" id="v-ang">15.0 <small>°</small></div>
-    </div>
-    <div class="ctrl">
-      <span class="cl">Vehicle Mass</span>
-      <input type="range" id="sl-mass" min="200" max="5000" value="1200" step="50">
-      <div class="bv" id="v-mass">1200 <small>kg</small></div>
-    </div>
-    <div class="ctrl">
-      <span class="cl">Surface Condition</span>
-      <select id="sel-surf">
-        <option value="1.0|dry">Dry Asphalt</option>
-        <option value="0.60|wet">Wet Asphalt</option>
-        <option value="0.28|snow">Packed Snow</option>
-        <option value="0.10|snow">Black Ice</option>
-        <option value="0.46|dry">Dry Gravel</option>
-        <option value="0.48|wet">Wet Gravel</option>
-        <option value="0.52|wet">Wet Grass</option>
-      </select>
-    </div>
-    <div class="ctrl">
-      <span class="cl">Tyre Compound</span>
-      <div class="bg2">
-        <button class="xb" data-c="HARD RUBBER">HARD<br>RUBBER</button>
-        <button class="xb ca" data-c="SOFT RUBBER">SOFT<br>RUBBER</button>
-        <button class="xb" data-c="SANDPAPER">SAND-<br>PAPER</button>
-        <button class="xb" data-c="TEFLON">TEFLON<br><small style="font-size:.48rem;color:var(--muted)">(slippery)</small></button>
+  <div id="mid">
+    <div id="lp">
+      <div class="pt">Parameters</div>
+      <div class="ctrl">
+        <span class="cl">Slope Angle</span>
+        <input type="range" id="sl-ang" min="0" max="80" value="15" step="0.5">
+        <div class="bv" id="v-ang">15.0 <small>°</small></div>
       </div>
-      <div class="nl" id="cnote"></div>
-    </div>
-    <div class="ctrl">
-      <span class="cl">Groove Depth</span>
-      <div class="bg4">
-        <button class="xb" data-g="0">SLICK</button>
-        <button class="xb" data-g="1">SHAL</button>
-        <button class="xb ga" data-g="2">MED</button>
-        <button class="xb" data-g="3">DEEP</button>
+      <div class="ctrl">
+        <span class="cl">Vehicle Mass</span>
+        <input type="range" id="sl-mass" min="200" max="5000" value="1200" step="50">
+        <div class="bv" id="v-mass">1200 <small>kg</small></div>
       </div>
-      <div class="nl" id="gnote"></div>
+      <div class="ctrl">
+        <span class="cl">Surface</span>
+        <select id="sel-surf">
+          <option value="1.0|dry">Dry Asphalt</option>
+          <option value="0.60|wet">Wet Asphalt</option>
+          <option value="0.28|snow">Packed Snow</option>
+          <option value="0.10|snow">Black Ice</option>
+          <option value="0.46|dry">Dry Gravel</option>
+          <option value="0.48|wet">Wet Gravel</option>
+          <option value="0.52|wet">Wet Grass</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <span class="cl">Tyre Compound</span>
+        <div class="g2">
+          <button class="xb" data-c="HARD">HARD<br>RUBBER</button>
+          <button class="xb ca" data-c="SOFT">SOFT<br>RUBBER</button>
+          <button class="xb" data-c="SAND">SAND-<br>PAPER</button>
+          <button class="xb" data-c="PTFE">TEFLON<br><span style="font-size:.45rem;color:#33334a">slippery</span></button>
+        </div>
+        <div class="nl" id="cnote">Soft rubber deforms to maximise contact patch.</div>
+      </div>
+      <div class="ctrl">
+        <span class="cl">Groove Depth</span>
+        <div class="g4">
+          <button class="xb" data-g="0">SLICK</button>
+          <button class="xb" data-g="1">SHAL</button>
+          <button class="xb ga" data-g="2">MED</button>
+          <button class="xb" data-g="3">DEEP</button>
+        </div>
+        <div class="nl" id="gnote"></div>
+      </div>
+      <button class="rbtn" id="btn-run">▶ RUN</button>
+      <button class="rstbtn" id="btn-rst">↺ RESET</button>
     </div>
-    <button class="br" id="btn-run">▶ RUN</button>
-    <button class="rst" id="btn-rst">↺ RESET</button>
+
+    <div id="rp">
+      <div class="pt">Live Data</div>
+      <div class="dr"><div class="dl">Angle</div><div class="dv" id="d-ang">—</div></div>
+      <div class="dr"><div class="dl">Speed</div><div class="dv" id="d-vel">—</div></div>
+      <div class="dr"><div class="dl">Acceleration</div><div class="dv" id="d-acc">—</div></div>
+      <div class="dr"><div class="dl">Distance</div><div class="dv" id="d-dst">—</div></div>
+      <div class="dr"><div class="dl">F↓ Down-Slope</div><div class="dv" id="d-fd">—</div></div>
+      <div class="dr"><div class="dl">F Static/Kinetic</div><div class="dv" id="d-ff">—</div></div>
+      <div class="dr"><div class="dl">Slip Threshold</div><div class="dv" id="d-thr">—</div></div>
+      <div class="dr"><div class="dl">Groove Mult</div><div class="dv" id="d-gm">—</div></div>
+      <div class="dr"><div class="dl">Status</div><div class="dv" id="d-st">—</div></div>
+      <div style="margin-top:8px;"><span class="cl">Grip Margin</span>
+        <div class="bt"><div class="bf" id="grip-bar" style="width:100%;background:#30ff80"></div></div>
+      </div>
+      <div style="margin-top:10px;padding:8px;background:rgba(6,6,14,.8);border:1px solid #1a1a30;border-radius:2px;font-size:.52rem;color:#44446a;line-height:1.9;">
+        <div style="color:#f0c040;letter-spacing:2px;margin-bottom:3px;font-size:.54rem;">PHYSICS</div>
+        Slip when: mg·sin(θ) > μ_s·μ·gm·mg·cos(θ)<br>
+        Kinetic: a=(F↓−Fk)/m, v+=a·dt<br>
+        <span style="color:#f0c040">Grooves: ↑wet/snow, ↓dry</span>
+      </div>
+    </div>
   </div>
-
-  <div></div><!-- centre pass-through -->
-
-  <div id="rp">
-    <div class="pt">Live Data</div>
-    <div class="dr"><div class="dl">Angle</div><div class="dv" id="d-ang">—</div></div>
-    <div class="dr"><div class="dl">Speed</div><div class="dv" id="d-vel">—</div></div>
-    <div class="dr"><div class="dl">Acceleration</div><div class="dv" id="d-acc">—</div></div>
-    <div class="dr"><div class="dl">Distance Slid</div><div class="dv" id="d-dst">—</div></div>
-    <div class="dr"><div class="dl">F Down-Slope</div><div class="dv" id="d-fd">—</div></div>
-    <div class="dr"><div class="dl">F Static / Kinetic</div><div class="dv" id="d-ff">—</div></div>
-    <div class="dr"><div class="dl">Slip Threshold</div><div class="dv" id="d-thr">—</div></div>
-    <div class="dr"><div class="dl">Groove Mult</div><div class="dv" id="d-gm">—</div></div>
-    <div class="dr"><div class="dl">Status</div><div class="dv" id="d-st">—</div></div>
-    <div class="bw">
-      <span class="cl">Grip Margin</span>
-      <div class="bt"><div class="bf" id="grip-bar" style="width:100%;background:var(--safe)"></div></div>
-    </div>
-    <div class="fb">
-      <div class="ft">PHYSICS</div>
-      Slip: mg·sin(θ) > μ_s·μ_surf·gMult·mg·cos(θ)<br>
-      Kinetic: a=(F↓−F_k)/m, v+=a·dt<br>
-      μ_k &lt; μ_s → slip self-reinforcing<br>
-      <span style="color:var(--accent)">Grooves: ↑wet/snow, ↓dry grip</span>
-    </div>
-  </div>
-
   <div id="ft">
-    <span>Static > Kinetic friction — the Stribeck effect</span>
-    <span>bennett, co — grip 3d ∞</span>
+    <span>μ_static > μ_kinetic — slip is self-reinforcing once started</span>
+    <span>grip 3d ∞</span>
   </div>
 </div>
 
 <script>
-'use strict';
-// ═══════════════════════════════════════════════════
-// PHYSICS
-// ═══════════════════════════════════════════════════
-const COMPOUNDS = {
-  'HARD RUBBER':{ mus:0.80, muk:0.58, col:0xbbbbbb, note:'Stiff. Less deformation = less contact area.' },
-  'SOFT RUBBER':{ mus:1.20, muk:0.92, col:0xff4444, note:'Best dry grip. Deforms to maximise contact patch.' },
-  'SANDPAPER':  { mus:0.70, muk:0.50, col:0xcc9944, note:'Rigid & abrasive. Poor surface conformity = low grip.' },
-  'TEFLON':     { mus:0.12, muk:0.06, col:0x88ddff, note:'Near-zero friction. Slippery control compound.' },
+// ════════════════════════════════════════════
+// THREE.JS — inline minimal to guarantee load
+// ════════════════════════════════════════════
+(function(){
+
+// Load Three.js then boot
+const s = document.createElement('script');
+s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+s.onload = boot;
+s.onerror = ()=>{ document.body.innerHTML='<div style="color:#ff3030;padding:40px;font-size:1.5rem;">Could not load Three.js — check your internet connection.</div>'; };
+document.head.appendChild(s);
+
+// ════════════════════════════════════════════
+// PHYSICS DATA
+// ════════════════════════════════════════════
+const CDATA = {
+  HARD:{ mus:0.80, muk:0.58, hexCol:0xbbbbbb, note:'Stiff. Less deformation = less contact area.' },
+  SOFT:{ mus:1.20, muk:0.92, hexCol:0xff4444, note:'Best dry grip. Deforms to maximise contact patch.' },
+  SAND:{ mus:0.70, muk:0.50, hexCol:0xcc9944, note:'Rigid & abrasive. Poor surface conformity = low grip.' },
+  PTFE:{ mus:0.12, muk:0.06, hexCol:0x88ddff, note:'Near-zero friction. Slippery control compound.' },
 };
-const GROOVES = {
-  0:{ dry:1.00, wet:0.40, snow:0.30, note:'Slick: max dry contact, zero wet clearance.' },
-  1:{ dry:0.93, wet:0.75, snow:0.65, note:'Shallow: mild wet improvement, minor dry loss.' },
+const GDATA = {
+  0:{ dry:1.00, wet:0.40, snow:0.30, note:'Slick: max dry contact, aquaplane risk on wet.' },
+  1:{ dry:0.93, wet:0.75, snow:0.65, note:'Shallow: mild wet help, minor dry loss.' },
   2:{ dry:0.85, wet:1.00, snow:0.85, note:'Medium: balanced — standard road tread.' },
   3:{ dry:0.75, wet:1.10, snow:1.10, note:'Deep: max wet/snow clearance, big dry penalty.' },
 };
 const G = 9.81;
 
-const ST = { angle:15, mass:1200, surfMu:1.0, surfType:'dry', compound:'SOFT RUBBER', groove:2 };
+// Simulation state
+const ST = { angle:15, mass:1200, surfMu:1.0, surfType:'dry', compound:'SOFT', groove:2 };
 const SIM = { running:false, slipping:false, vel:0, dist:0, wheelAng:0, lastT:null };
 
-function phy() {
-  const th = ST.angle * Math.PI/180;
-  const c  = COMPOUNDS[ST.compound];
-  const gv = GROOVES[ST.groove];
-  const gm = ST.surfType==='dry'? gv.dry : ST.surfType==='snow'? gv.snow : gv.wet;
+function calcPhysics() {
+  const th = ST.angle * Math.PI / 180;
+  const c  = CDATA[ST.compound];
+  const gv = GDATA[ST.groove];
+  const gm = ST.surfType==='dry' ? gv.dry : ST.surfType==='snow' ? gv.snow : gv.wet;
   const mus = c.mus * ST.surfMu * gm;
   const muk = c.muk * ST.surfMu * gm;
   const fN  = ST.mass * G * Math.cos(th);
   const fD  = ST.mass * G * Math.sin(th);
-  const fS  = mus * fN, fK = muk * fN;
-  const fNt = fD - fK;
-  const acc = SIM.slipping ? Math.max(0, fNt)/ST.mass : 0;
-  const thr = Math.atan(mus)*180/Math.PI;
-  const grip= Math.min(1, fS / Math.max(fD,.001));
-  return { fD, fN, fS, fK, fNt, acc, thr, grip, gm };
+  const fS  = mus * fN;
+  const fK  = muk * fN;
+  const acc = SIM.slipping ? Math.max(0, (fD - fK) / ST.mass) : 0;
+  const thr = Math.atan(mus) * 180 / Math.PI;
+  const grip= Math.min(1, fS / Math.max(fD, 0.001));
+  return { fD, fN, fS, fK, acc, thr, grip, gm };
 }
 
-// ═══════════════════════════════════════════════════
-// THREE.JS
-// ═══════════════════════════════════════════════════
-const canvas = document.getElementById('cv');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+function boot() {
+// ════════════════════════════════════════════
+// RENDERER
+// ════════════════════════════════════════════
+const W = ()=>window.innerWidth, H = ()=>window.innerHeight;
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W(), H());
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.85;
+renderer.toneMappingExposure = 0.9;
+document.getElementById('three').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a18);
-scene.fog = new THREE.FogExp2(0x0a0a18, 0.022);
+scene.background = new THREE.Color(0x080c18);
+scene.fog = new THREE.FogExp2(0x080c18, 0.025);
 
-const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 300);
-camera.position.set(0, 3, 9);
+const camera = new THREE.PerspectiveCamera(55, W()/H(), 0.1, 300);
 
-// ── Lights ──
-scene.add(new THREE.AmbientLight(0x202040, 1.4));
-const sun = new THREE.DirectionalLight(0xfff0dd, 2.8);
-sun.position.set(10, 18, 8);
+window.addEventListener('resize', ()=>{
+  renderer.setSize(W(), H());
+  camera.aspect = W()/H();
+  camera.updateProjectionMatrix();
+});
+
+// ════════════════════════════════════════════
+// LIGHTING
+// ════════════════════════════════════════════
+scene.add(new THREE.AmbientLight(0x202040, 1.5));
+
+const sun = new THREE.DirectionalLight(0xfff0dd, 3.0);
+sun.position.set(8, 16, 6);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left=-30; sun.shadow.camera.right=30;
-sun.shadow.camera.top=30;  sun.shadow.camera.bottom=-30;
-sun.shadow.camera.far=80;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
+sun.shadow.camera.top  =  25; sun.shadow.camera.bottom= -25;
+sun.shadow.camera.far  = 60;
 scene.add(sun);
-const rimLight = new THREE.DirectionalLight(0x3050ff, 0.7);
-rimLight.position.set(-8, 5, -10);
-scene.add(rimLight);
 
-// ── World group – everything scrolls inside this ──
-// The car stays still at z=0 in world space; the world moves toward +Z (past the car)
-const world = new THREE.Group();
-scene.add(world);
+const fill = new THREE.DirectionalLight(0x3060ff, 0.6);
+fill.position.set(-8, 5, -10);
+scene.add(fill);
 
-// ── Road tiles ──
-// Each tile is TILE_L units long. We keep TILE_N tiles; recycle them.
-const TILE_L = 20, TILE_W = 4.8, TILE_N = 6, ROAD_Y = 0;
-const ROAD_X_OFFSET = 0; // road centre x
+const carFill = new THREE.PointLight(0xffeedd, 2, 12);
+carFill.position.set(0, 6, 0);
+scene.add(carFill);
 
-const roadMat  = new THREE.MeshStandardMaterial({ color:0x161620, roughness:.92, metalness:.05 });
-const roadEdge = new THREE.MeshStandardMaterial({ color:0x888880, roughness:1 });
-const lineMat  = new THREE.MeshStandardMaterial({ color:0x3a3a50, roughness:1 });
-const curb1Mat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:.8 });
-const curb2Mat = new THREE.MeshStandardMaterial({ color:0xff2222, roughness:.8 });
+// ════════════════════════════════════════════
+// SLOPE GROUP — everything lives here, we tilt this
+// ════════════════════════════════════════════
+const slopeGroup = new THREE.Group();
+scene.add(slopeGroup);
 
-function makeTile(zPos) {
+// ── Road tiles (infinite recycling) ──
+const TILE_L = 18, TILE_W = 5.5, TILE_N = 7;
+
+const roadMat   = new THREE.MeshStandardMaterial({ color:0x1a1a22, roughness:.92, metalness:.04 });
+const curbWMat  = new THREE.MeshStandardMaterial({ color:0xeeeeee, roughness:.7 });
+const curbRMat  = new THREE.MeshStandardMaterial({ color:0xdd2222, roughness:.7 });
+const dashMat   = new THREE.MeshStandardMaterial({ color:0x404055, roughness:1 });
+const edgeMat   = new THREE.MeshStandardMaterial({ color:0xcccccc, roughness:.8 });
+
+function makeTile(zStart) {
   const g = new THREE.Group();
-  g.position.z = zPos;
 
-  // Road slab
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(TILE_W, 0.22, TILE_L), roadMat);
-  slab.position.y = -0.11;
-  slab.receiveShadow = true;
-  g.add(slab);
+  // Road surface
+  const road = new THREE.Mesh(new THREE.BoxGeometry(TILE_W, 0.2, TILE_L), roadMat);
+  road.position.y = -0.1;
+  road.receiveShadow = true;
+  g.add(road);
 
-  // Side curbs alternating red/white
-  [-TILE_W/2+.1, TILE_W/2-.1].forEach(x => {
-    for (let i=0; i<4; i++) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(.2,.28,.95), i%2===0? curb1Mat: curb2Mat);
-      m.position.set(x, .04, -TILE_L/2+i*(TILE_L/4)+TILE_L/8);
-      g.add(m);
-    }
-  });
-
-  // Dashed centre line
-  for (let i=0; i<6; i++) {
-    const dash = new THREE.Mesh(new THREE.BoxGeometry(.06,.005,.9), lineMat);
-    dash.position.set(0,.002,-TILE_L/2+i*(TILE_L/6)+.45);
-    g.add(dash);
+  // Kerb blocks alternating red/white
+  const KERB_SEGS = 5;
+  for (let s = 0; s < KERB_SEGS; s++) {
+    const mat = s % 2 === 0 ? curbWMat : curbRMat;
+    const kLen = TILE_L / KERB_SEGS - 0.06;
+    const kz   = -TILE_L/2 + s*(TILE_L/KERB_SEGS) + kLen/2 + 0.03;
+    [-TILE_W/2 + 0.18, TILE_W/2 - 0.18].forEach(kx => {
+      const k = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.3, kLen), mat);
+      k.position.set(kx, 0.05, kz);
+      k.castShadow = true;
+      g.add(k);
+    });
   }
 
-  // Shoulder strips (white edge lines)
-  [-TILE_W/2+.35, TILE_W/2-.35].forEach(x=>{
-    const e = new THREE.Mesh(new THREE.BoxGeometry(.08,.004,TILE_L), roadEdge);
-    e.position.set(x,.002,0);
+  // White edge lines
+  [-TILE_W/2 + 0.45, TILE_W/2 - 0.45].forEach(ex => {
+    const e = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.005, TILE_L), edgeMat);
+    e.position.set(ex, 0.003, 0);
     g.add(e);
   });
 
-  world.add(g);
+  // Dashed centre line
+  const DASHES = 7;
+  for (let d = 0; d < DASHES; d++) {
+    const dz = -TILE_L/2 + d*(TILE_L/DASHES) + (TILE_L/DASHES)*0.4;
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.005, TILE_L/DASHES * 0.55), dashMat);
+    dash.position.set(0, 0.003, dz);
+    g.add(dash);
+  }
+
+  g.position.z = zStart;
+  slopeGroup.add(g);
   return g;
 }
 
 const tiles = [];
-for (let i=0; i<TILE_N; i++) tiles.push(makeTile(-TILE_L * i));
-// tiles[0] is at z=0 (right under car), subsequent tiles are at -TILE_L, -2*TILE_L...
-// As world scrolls backward (world.position.z increases), tiles that go past +TILE_L/2
-// are moved to the front.
+for (let i = 0; i < TILE_N; i++) {
+  tiles.push(makeTile(-i * TILE_L));
+}
 
-// ── Terrain banks (sides of road) ──
-const bankMat = new THREE.MeshStandardMaterial({ color:0x0d1a0d, roughness:1 });
-const BANK_N = TILE_N;
+// ── Terrain / banks on sides ──
+const bankMat = new THREE.MeshStandardMaterial({ color:0x0d180d, roughness:1 });
 const bankTiles = [];
-function makeBank(zPos) {
+function makeBank(zStart) {
   const g = new THREE.Group();
-  g.position.z = zPos;
-  [-TILE_W/2-1.2, TILE_W/2+1.2].forEach(x=>{
-    const b = new THREE.Mesh(new THREE.BoxGeometry(2.4,.15,TILE_L), bankMat);
-    b.position.set(x,-.02,0);
-    b.receiveShadow=true;
+  [-TILE_W/2 - 2.0, TILE_W/2 + 2.0].forEach(bx => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(4, 0.15, TILE_L), bankMat);
+    b.position.set(bx, -0.04, 0);
+    b.receiveShadow = true;
     g.add(b);
   });
-  world.add(g);
+  g.position.z = zStart;
+  slopeGroup.add(g);
   return g;
 }
-for (let i=0; i<BANK_N; i++) bankTiles.push(makeBank(-TILE_L*i));
+for (let i = 0; i < TILE_N; i++) bankTiles.push(makeBank(-i * TILE_L));
 
 // ── Trees ──
-// Pool of tree objects; repositioned when they scroll past camera.
-const TREE_COUNT = 60;
-const trees = [];
+const treeMat1 = new THREE.MeshStandardMaterial({ color:0x0d3d10, roughness:.9 });
+const treeMat2 = new THREE.MeshStandardMaterial({ color:0x1a5e1a, roughness:.9 });
+const trunkMat = new THREE.MeshStandardMaterial({ color:0x3a1e08, roughness:1 });
+const TREE_COUNT = 70;
+const treeMeshes = [];
+
+function randX() {
+  const side = Math.random() < 0.5 ? -1 : 1;
+  return side * (TILE_W/2 + 1.2 + Math.random() * 6);
+}
 
 function makeTree(x, z) {
   const g = new THREE.Group();
-  const h = 1.8 + Math.random()*2.2;
-  const trunkH = h * 0.38;
+  const h = 2.0 + Math.random() * 2.5;
 
   // Trunk
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.09+Math.random()*.06, 0.13+Math.random()*.08, trunkH, 6),
-    new THREE.MeshStandardMaterial({ color:0x3a2010, roughness:1 })
+    new THREE.CylinderGeometry(0.08, 0.14, h * 0.4, 6),
+    trunkMat
   );
-  trunk.position.y = trunkH/2;
+  trunk.position.y = h * 0.2;
   trunk.castShadow = true;
   g.add(trunk);
 
-  // Foliage layers (conifer style)
-  const layers = 3 + Math.floor(Math.random()*2);
-  const baseGreen = new THREE.Color(0x0d3d0d).lerp(new THREE.Color(0x1a6620), Math.random());
-  for (let l=0; l<layers; l++) {
-    const r = (0.55+Math.random()*.3) * (1 - l*0.22);
-    const lh = 0.7 + Math.random()*.4;
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(r, lh, 7),
-      new THREE.MeshStandardMaterial({ color:baseGreen, roughness:.9 })
-    );
-    cone.position.y = trunkH + l*(lh*.55) + lh*.4;
+  // 3 cone layers
+  const mat = Math.random() > 0.5 ? treeMat1 : treeMat2;
+  for (let l = 0; l < 3; l++) {
+    const r = (0.6 - l*0.12) * (0.85 + Math.random()*0.3);
+    const lh = 0.85 + Math.random()*0.35;
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(r, lh, 7), mat);
+    cone.position.y = h * 0.38 + l * (lh * 0.5) + lh * 0.5;
     cone.castShadow = true;
     g.add(cone);
   }
 
   g.position.set(x, 0, z);
-  g.rotation.y = Math.random()*Math.PI*2;
-  g.scale.setScalar(0.85 + Math.random()*.3);
-  world.add(g);
+  g.rotation.y = Math.random() * Math.PI * 2;
+  g.scale.setScalar(0.85 + Math.random() * 0.35);
+  slopeGroup.add(g);
   return g;
 }
 
-// Spread trees on both sides; z from 0 to -TILE_L*TILE_N
-const TREE_MIN_X = TILE_W/2 + 0.8, TREE_MAX_X = TILE_W/2 + 5.5;
-function randTreeX() {
-  const side = Math.random()<.5 ? -1 : 1;
-  return side * (TREE_MIN_X + Math.random()*(TREE_MAX_X-TREE_MIN_X));
-}
-for (let i=0; i<TREE_COUNT; i++) {
+for (let i = 0; i < TREE_COUNT; i++) {
   const z = -Math.random() * TILE_L * TILE_N;
-  trees.push(makeTree(randTreeX(), z));
+  treeMeshes.push(makeTree(randX(), z));
 }
 
-// ── Slope tilt: world rotates around X axis ──
-function updateTilt() {
-  const rad = ST.angle * Math.PI/180;
-  // Tilt the whole world so it looks like a slope
-  world.rotation.x = rad;
-  // Offset so road surface passes through origin area
-  world.position.y = -Math.sin(rad) * 3;
-}
-updateTilt();
+// ════════════════════════════════════════════
+// CAR — also inside slopeGroup so it tilts with slope
+// ════════════════════════════════════════════
+const car = new THREE.Group();
+car.position.set(0, 0.42, -6); // sit on top of road, toward camera-end of slope
+slopeGroup.add(car);
 
-// ── CAR (fixed in scene space, world scrolls under it) ──
-const carGroup = new THREE.Group();
-carGroup.position.set(0, 0.3, -3);
-world.add(carGroup);
+// Main body
+const bodyMat = new THREE.MeshStandardMaterial({ color:0x1e2060, roughness:.3, metalness:.75 });
+const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 2.9), bodyMat);
+body.position.y = 0.58;
+body.castShadow = true;
+car.add(body);
 
-// Body
-const bodyMat  = new THREE.MeshStandardMaterial({ color:0x1a1a3a, roughness:.35, metalness:.7 });
-const body     = new THREE.Mesh(new THREE.BoxGeometry(1.52,.5,2.85), bodyMat);
-body.position.y = .65; body.castShadow=true; carGroup.add(body);
+// Roof / cabin
+const cabinMat = new THREE.MeshStandardMaterial({ color:0x252870, roughness:.25, metalness:.6 });
+const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.42, 1.5), cabinMat);
+cabin.position.set(0, 1.08, -0.1);
+cabin.castShadow = true;
+car.add(cabin);
 
-// Cabin
-const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.22,.38,1.45),
-  new THREE.MeshStandardMaterial({ color:0x22224a, roughness:.3, metalness:.5 }));
-cabin.position.set(0,1.05,-.08); cabin.castShadow=true; carGroup.add(cabin);
+// Windshield
+const glassMat = new THREE.MeshStandardMaterial({ color:0xaaccff, roughness:0, metalness:.05, transparent:true, opacity:.38 });
+const wind = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.4, 0.05), glassMat);
+wind.position.set(0, 1.08, 0.65);
+car.add(wind);
 
-// Glass
-const glass = new THREE.Mesh(new THREE.BoxGeometry(1.2,.36,.04),
-  new THREE.MeshStandardMaterial({ color:0x88aaff, roughness:0, metalness:.1, transparent:true, opacity:.35 }));
-glass.position.set(0,1.05,.52); carGroup.add(glass);
+// Rear window
+const rwind = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.4, 0.05), glassMat);
+rwind.position.set(0, 1.08, -0.85);
+car.add(rwind);
 
-// Lights
-const hlGeo = new THREE.BoxGeometry(.28,.12,.06);
-const hlMat = new THREE.MeshStandardMaterial({ color:0xffffcc, emissive:0xffffaa, emissiveIntensity:2 });
-const tlMat = new THREE.MeshStandardMaterial({ color:0xff2200, emissive:0xff1100, emissiveIntensity:1.5 });
-[-0.44,0.44].forEach(x=>{
-  const hl=new THREE.Mesh(hlGeo,hlMat); hl.position.set(x,.65,1.42); carGroup.add(hl);
-  const tl=new THREE.Mesh(hlGeo,tlMat); tl.position.set(x,.65,-1.42); carGroup.add(tl);
+// Headlights
+const hlMat = new THREE.MeshStandardMaterial({ color:0xffffcc, emissive:0xffffaa, emissiveIntensity:2.5 });
+const tlMat = new THREE.MeshStandardMaterial({ color:0xff1100, emissive:0xff1100, emissiveIntensity:2.0 });
+const hlGeo = new THREE.BoxGeometry(0.3, 0.13, 0.07);
+[-0.5, 0.5].forEach(x => {
+  const hl = new THREE.Mesh(hlGeo, hlMat); hl.position.set(x, 0.62, 1.46); car.add(hl);
+  const tl = new THREE.Mesh(hlGeo, tlMat); tl.position.set(x, 0.62, -1.46); car.add(tl);
 });
 
-// Beacon
-const beaconMat = new THREE.MeshStandardMaterial({ color:0x30ff80, emissive:0x30ff80, emissiveIntensity:3.5 });
-const beacon = new THREE.Mesh(new THREE.SphereGeometry(.07,8,8), beaconMat);
-beacon.position.set(0,1.3,0); carGroup.add(beacon);
-const beaconLight = new THREE.PointLight(0x30ff80,2,4);
-beaconLight.position.set(0,1.4,0); carGroup.add(beaconLight);
+// Grille
+const grille = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.22, 0.06),
+  new THREE.MeshStandardMaterial({ color:0x111122, roughness:.5, metalness:.9 }));
+grille.position.set(0, 0.52, 1.47);
+car.add(grille);
 
-// ── Wheels ──
-const wheelGroups = [];
+// Roof beacon
+const beaconMat = new THREE.MeshStandardMaterial({ color:0x30ff80, emissive:0x30ff80, emissiveIntensity:4 });
+const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), beaconMat);
+beacon.position.set(0, 1.33, 0);
+car.add(beacon);
+const beaconPt = new THREE.PointLight(0x30ff80, 2.5, 5);
+beaconPt.position.set(0, 1.45, 0);
+car.add(beaconPt);
 
-function buildGrooves(wg, n) {
-  wg.children.filter(c=>c.userData.gr).forEach(c=>wg.remove(c));
-  if (n===0) return;
-  // Groove positions along wheel axis (x)
-  const offsets = n===1?[0]:n===2?[-.075,.075]:[-.13,0,.13];
-  const grooveMat = new THREE.MeshStandardMaterial({ color:0x030303, roughness:1 });
-  offsets.forEach(ox=>{
-    // Main groove ring
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(.3,.009,8,36), grooveMat);
-    ring.rotation.y = Math.PI/2; ring.position.x = ox;
-    ring.userData.gr=true; wg.add(ring);
-    // Channel slots
-    const segs=20;
-    for(let s=0;s<segs;s++){
-      const ang=(s/segs)*Math.PI*2;
-      const slot = new THREE.Mesh(new THREE.BoxGeometry(.02,.026,.024), grooveMat);
-      slot.position.set(ox, Math.sin(ang)*.3, Math.cos(ang)*.3);
-      slot.lookAt(new THREE.Vector3(ox*2, Math.sin(ang)*.6, Math.cos(ang)*.6));
-      slot.userData.gr=true; wg.add(slot);
+// Undercarriage / skirt
+const skirtMat = new THREE.MeshStandardMaterial({ color:0x0d0d1a, roughness:.6, metalness:.5 });
+const skirt = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.12, 2.95), skirtMat);
+skirt.position.y = 0.26;
+car.add(skirt);
+
+// ── WHEELS with real grooves ──
+const wheels = []; // { group, tyreMat }
+
+function buildGrooveRings(wg, n) {
+  // Remove old grooves
+  const toRemove = wg.children.filter(c => c.userData.isGroove);
+  toRemove.forEach(c => wg.remove(c));
+
+  if (n === 0) return;
+
+  const grooveMat = new THREE.MeshStandardMaterial({ color:0x020202, roughness:1 });
+
+  // How many groove rings
+  const offsets = [
+    [],
+    [0],
+    [-0.072, 0.072],
+    [-0.115, 0, 0.115],
+  ][n] || [];
+
+  offsets.forEach(ox => {
+    // Torus ring groove
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.011, 8, 40), grooveMat);
+    ring.rotation.y = Math.PI / 2;
+    ring.position.x = ox;
+    ring.userData.isGroove = true;
+    wg.add(ring);
+
+    // Slot cuts around the tyre (look like channel grooves)
+    const SLOTS = 24;
+    for (let s = 0; s < SLOTS; s++) {
+      const ang = (s / SLOTS) * Math.PI * 2;
+      const py = Math.sin(ang) * 0.302;
+      const pz = Math.cos(ang) * 0.302;
+      const slot = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.028, 0.026), grooveMat);
+      slot.position.set(ox, py, pz);
+      // Orient outward from tyre centre
+      slot.lookAt(new THREE.Vector3(ox, py * 2, pz * 2));
+      slot.userData.isGroove = true;
+      wg.add(slot);
     }
   });
 }
 
-function makeWheel() {
+function makeWheel(flip) {
   const wg = new THREE.Group();
-  const c = COMPOUNDS[ST.compound];
+  const c  = CDATA[ST.compound];
 
-  const tyreMat = new THREE.MeshStandardMaterial({ color:c.col, roughness:.85, metalness:.05 });
-  const tyre = new THREE.Mesh(new THREE.TorusGeometry(.3,.115,18,36), tyreMat);
-  tyre.rotation.y=Math.PI/2; tyre.castShadow=true;
-  wg.add(tyre); wg.userData.tyreMat=tyreMat; wg.userData.tyre=tyre;
+  const tyreMat = new THREE.MeshStandardMaterial({ color:c.hexCol, roughness:.86, metalness:.04 });
+  const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.118, 20, 40), tyreMat);
+  tyre.rotation.y = Math.PI / 2;
+  tyre.castShadow = true;
+  wg.add(tyre);
+  wg.userData.tyreMat = tyreMat;
 
-  buildGrooves(wg, ST.groove);
+  buildGrooveRings(wg, ST.groove);
 
-  // Rim
-  const rim = new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.09,24),
-    new THREE.MeshStandardMaterial({ color:0x556677, roughness:.25, metalness:.85 }));
-  rim.rotation.z=Math.PI/2; rim.castShadow=true; wg.add(rim);
+  // Rim disc
+  const rim = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.23, 0.23, 0.1, 24),
+    new THREE.MeshStandardMaterial({ color:0x667788, roughness:.2, metalness:.9 })
+  );
+  rim.rotation.z = Math.PI / 2;
+  rim.castShadow = true;
+  wg.add(rim);
 
-  // Spokes
-  for(let i=0;i<5;i++){
-    const sg = new THREE.Group();
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(.034,.19,.038),
-      new THREE.MeshStandardMaterial({ color:0x667788, metalness:.9, roughness:.2 }));
-    spoke.rotation.x=(i/5)*Math.PI*2; sg.add(spoke);
-    sg.rotation.z=Math.PI/2; wg.add(sg);
+  // 5 spokes
+  for (let i = 0; i < 5; i++) {
+    const spokeGrp = new THREE.Group();
+    const spoke = new THREE.Mesh(
+      new THREE.BoxGeometry(0.036, 0.2, 0.04),
+      new THREE.MeshStandardMaterial({ color:0x778899, metalness:.9, roughness:.2 })
+    );
+    spoke.rotation.x = (i / 5) * Math.PI * 2;
+    spokeGrp.add(spoke);
+    spokeGrp.rotation.z = Math.PI / 2;
+    wg.add(spokeGrp);
   }
-  // Hub
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.11,12),
-    new THREE.MeshStandardMaterial({ color:0x8899aa, metalness:1, roughness:.1 }));
-  hub.rotation.z=Math.PI/2; wg.add(hub);
 
-  wg.userData.rebuild = ()=>buildGrooves(wg,ST.groove);
+  // Hub cap
+  const hub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 0.12, 12),
+    new THREE.MeshStandardMaterial({ color:0x99aabb, metalness:1, roughness:.08 })
+  );
+  hub.rotation.z = Math.PI / 2;
+  wg.add(hub);
+
+  wg.userData.rebuild = () => buildGrooveRings(wg, ST.groove);
   return wg;
 }
 
-const WHEEL_POS = [{x:-.82,z:.95},{x:.82,z:.95},{x:-.82,z:-.95},{x:.82,z:-.95}];
-WHEEL_POS.forEach(p=>{
-  const w=makeWheel();
-  w.position.set(p.x,.3,p.z);
-  carGroup.add(w);
-  wheelGroups.push(w);
+const WPOS = [
+  { x: -0.86, z:  1.0 },
+  { x:  0.86, z:  1.0 },
+  { x: -0.86, z: -1.0 },
+  { x:  0.86, z: -1.0 },
+];
+WPOS.forEach(p => {
+  const w = makeWheel();
+  w.position.set(p.x, 0.3, p.z);
+  car.add(w);
+  wheels.push(w);
 });
 
-// ── Smoke particles ──
-const smoke=[];
-function spawnSmoke(){
-  if(!SIM.slipping||SIM.vel<1) return;
-  WHEEL_POS.forEach(p=>{
-    if(Math.random()>.5) return;
-    const geo=new THREE.SphereGeometry(.05+Math.random()*.07,5,5);
-    const mat=new THREE.MeshStandardMaterial({ color:0x221100, transparent:true, opacity:.3+Math.random()*.2 });
-    const m=new THREE.Mesh(geo,mat);
-    // In scene space under each wheel
-    const wPos = new THREE.Vector3(p.x, .2, p.z);
-    carGroup.localToWorld(wPos);
-    m.position.copy(wPos);
-    m.userData.v=new THREE.Vector3((Math.random()-.5)*.04,.04+Math.random()*.04,(Math.random()-.5)*.04);
-    m.userData.life=1;
-    scene.add(m); smoke.push(m);
-  });
+// ════════════════════════════════════════════
+// TILT slopeGroup based on angle
+// ════════════════════════════════════════════
+function applyTilt() {
+  const rad = ST.angle * Math.PI / 180;
+  slopeGroup.rotation.x = rad;
+  // Shift so the road surface stays roughly centred on screen
+  slopeGroup.position.y = -1.5 - Math.sin(rad) * 4;
+  slopeGroup.position.z =  2   + Math.cos(rad) * 1;
 }
+applyTilt();
 
-function tickSmoke(dt){
-  for(let i=smoke.length-1;i>=0;i--){
-    const p=smoke[i]; p.userData.life-=dt*1.4;
-    p.material.opacity=p.userData.life*.28;
-    p.scale.setScalar(1+(1-p.userData.life)*2);
-    p.position.addScaledVector(p.userData.v,dt*60);
-    if(p.userData.life<=0){ scene.remove(p); smoke.splice(i,1); }
-  }
-}
+// ════════════════════════════════════════════
+// CAMERA ORBIT — smooth follow of car
+// ════════════════════════════════════════════
+let oTheta = 0.15, oPhi = 0.44, oR = 10;
+const camTarget = new THREE.Vector3();
+let drag = false, lastMX = 0, lastMY = 0;
 
-// ── Skid marks on road (world-space, attached to world group) ──
-const skidPool=[];
-const MAX_SKID=120;
-let skidTimer=0;
-
-function addSkid(){
-  if(!SIM.slipping||SIM.vel<.3) return;
-  const alpha=Math.min(.75,SIM.vel*.1);
-  // Car position in world-local space
-  const localZ = carGroup.position.z;
-  [-.55,.55].forEach(xOff=>{
-    const m=new THREE.Mesh(
-      new THREE.BoxGeometry(.1,.003,.18),
-      new THREE.MeshStandardMaterial({ color:0x0a0000, transparent:true, opacity:alpha, roughness:1 })
-    );
-    m.position.set(xOff,.003,localZ);
-    world.add(m); skidPool.push(m);
-    if(skidPool.length>MAX_SKID){ const old=skidPool.shift(); world.remove(old); }
-  });
-}
-
-// ── Orbit camera ──
-let drag=false, lm={x:0,y:0};
-let oTheta=0.1, oPhi=.42, oR=9;
-const oTgt=new THREE.Vector3(0,1,0);
-
-canvas.addEventListener('mousedown',e=>{drag=true;lm={x:e.clientX,y:e.clientY};});
-window.addEventListener('mouseup',()=>drag=false);
-window.addEventListener('mousemove',e=>{
-  if(!drag) return;
-  oTheta-=(e.clientX-lm.x)*.008;
-  oPhi=Math.max(.06,Math.min(1.45,oPhi-(e.clientY-lm.y)*.008));
-  lm={x:e.clientX,y:e.clientY};
+const domEl = renderer.domElement;
+domEl.addEventListener('mousedown', e => { drag=true; lastMX=e.clientX; lastMY=e.clientY; });
+window.addEventListener('mouseup', () => drag = false);
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  oTheta -= (e.clientX - lastMX) * 0.007;
+  oPhi = Math.max(0.05, Math.min(1.5, oPhi - (e.clientY - lastMY) * 0.007));
+  lastMX = e.clientX; lastMY = e.clientY;
 });
-canvas.addEventListener('wheel',e=>{oR=Math.max(3,Math.min(40,oR+e.deltaY*.02));},{passive:true});
+domEl.addEventListener('wheel', e => { oR = Math.max(3, Math.min(40, oR + e.deltaY * 0.018)); }, { passive:true });
 
-let lTouch=null;
-canvas.addEventListener('touchstart',e=>{ if(e.touches.length===1){drag=true;lTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};}});
-window.addEventListener('touchend',()=>{drag=false;lTouch=null;});
-window.addEventListener('touchmove',e=>{
-  if(!drag||!lTouch||e.touches.length!==1) return;
-  oTheta-=(e.touches[0].clientX-lTouch.x)*.008;
-  oPhi=Math.max(.06,Math.min(1.45,oPhi-(e.touches[0].clientY-lTouch.y)*.008));
-  lTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};
+// Touch
+let lt = null;
+domEl.addEventListener('touchstart', e => { if(e.touches.length===1){ drag=true; lt={x:e.touches[0].clientX,y:e.touches[0].clientY}; }});
+window.addEventListener('touchend', () => { drag=false; lt=null; });
+window.addEventListener('touchmove', e => {
+  if (!drag||!lt||e.touches.length!==1) return;
+  oTheta -= (e.touches[0].clientX-lt.x)*.007;
+  oPhi=Math.max(.05,Math.min(1.5,oPhi-(e.touches[0].clientY-lt.y)*.007));
+  lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
 });
 
-function updateCamera(){
+function updateCamera() {
   camera.position.set(
-    oTgt.x+oR*Math.sin(oPhi)*Math.sin(oTheta),
-    oTgt.y+oR*Math.cos(oPhi),
-    oTgt.z+oR*Math.sin(oPhi)*Math.cos(oTheta)
+    camTarget.x + oR * Math.sin(oPhi) * Math.sin(oTheta),
+    camTarget.y + oR * Math.cos(oPhi),
+    camTarget.z + oR * Math.sin(oPhi) * Math.cos(oTheta)
   );
-  camera.lookAt(oTgt);
+  camera.lookAt(camTarget);
 }
 
-// ── Resize ──
-function onResize(){
-  const w=innerWidth,h=innerHeight;
-  renderer.setSize(w,h,false);
-  camera.aspect=w/h; camera.updateProjectionMatrix();
-}
-onResize(); window.addEventListener('resize',onResize);
+// ════════════════════════════════════════════
+// SKID MARKS
+// ════════════════════════════════════════════
+const skidMeshes = [];
+const MAX_SKID = 100;
+let skidT = 0;
+const skidMat = new THREE.MeshStandardMaterial({ color:0x060000, roughness:1, transparent:true, opacity:.7 });
 
-// ── SCROLL SPEED ──
-// World scrolls at velocity. 1 m/s → some visual speed.
-// We scale so it feels dramatic even at low speeds.
-// Base scroll: when NOT slipping, world still moves slightly (idle drift).
-const SCROLL_SCALE = 1.8;   // visual amplification factor
-
-// ── MAIN LOOP ──
-let totalDist = 0;
-
-function animate(ts){
-  requestAnimationFrame(animate);
-  const dt=Math.min((ts-(SIM.lastT||ts))/1000,.05);
-  SIM.lastT=ts;
-
-  const p=phy();
-
-  if(SIM.running){
-    // Friction state machine
-    if(!SIM.slipping){
-      if(p.fD>p.fS){ SIM.slipping=true; SIM.vel=.005; }
+function addSkid() {
+  if (!SIM.slipping || SIM.vel < 0.3) return;
+  [-0.6, 0.6].forEach(xOff => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.003, 0.2), skidMat.clone());
+    // Position in slopeGroup local space — right under car
+    m.position.set(car.position.x + xOff, 0.004, car.position.z);
+    m.material.opacity = Math.min(0.75, SIM.vel * 0.1);
+    slopeGroup.add(m);
+    skidMeshes.push(m);
+    if (skidMeshes.length > MAX_SKID) {
+      const old = skidMeshes.shift();
+      slopeGroup.remove(old);
     }
-    if(SIM.slipping){
-      SIM.vel=Math.max(0,SIM.vel+p.acc*dt);
-      if(SIM.vel===0&&p.fD<=p.fS) SIM.slipping=false;
-      totalDist+=SIM.vel*dt;
+  });
+}
+
+// ════════════════════════════════════════════
+// SMOKE
+// ════════════════════════════════════════════
+const smokeArr = [];
+const smokeMat = new THREE.MeshStandardMaterial({ color:0x221100, transparent:true, opacity:.3 });
+
+function spawnSmoke() {
+  if (!SIM.slipping || SIM.vel < 1) return;
+  WPOS.forEach(wp => {
+    if (Math.random() > 0.55) return;
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.06 + Math.random()*0.09, 5, 5), smokeMat.clone());
+    // World position of wheel
+    const wpos = new THREE.Vector3(car.position.x + wp.x, car.position.y + 0.15, car.position.z + wp.z);
+    slopeGroup.localToWorld(wpos);
+    m.position.copy(wpos);
+    m.userData.v = new THREE.Vector3((Math.random()-.5)*.05, .04+Math.random()*.05, (Math.random()-.5)*.05);
+    m.userData.life = 1;
+    scene.add(m);
+    smokeArr.push(m);
+  });
+}
+
+function tickSmoke(dt) {
+  for (let i = smokeArr.length-1; i >= 0; i--) {
+    const p = smokeArr[i];
+    p.userData.life -= dt * 1.5;
+    p.material.opacity = p.userData.life * 0.28;
+    p.scale.setScalar(1 + (1 - p.userData.life) * 2.5);
+    p.position.addScaledVector(p.userData.v, dt * 60);
+    if (p.userData.life <= 0) { scene.remove(p); smokeArr.splice(i, 1); }
+  }
+}
+
+// ════════════════════════════════════════════
+// MAIN LOOP
+// ════════════════════════════════════════════
+const SCROLL = 2.2; // visual scale: m/s → scene units/s
+
+function animate(ts) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((ts - (SIM.lastT || ts)) / 1000, 0.05);
+  SIM.lastT = ts;
+
+  const p = calcPhysics();
+
+  if (SIM.running) {
+    if (!SIM.slipping) {
+      if (p.fD > p.fS) { SIM.slipping = true; SIM.vel = 0.008; }
+    }
+    if (SIM.slipping) {
+      SIM.vel = Math.max(0, SIM.vel + p.acc * dt);
+      if (SIM.vel === 0 && p.fD <= p.fS) SIM.slipping = false;
+      SIM.dist += SIM.vel * dt;
+
+      skidT -= dt;
+      if (skidT < 0) { addSkid(); skidT = 0.05; }
+      if (Math.random() < SIM.vel * 0.3 * dt * 60) spawnSmoke();
     }
   }
 
-  // Scroll speed: when slipping use real velocity; add tiny base speed for visual interest
+  // Speed for scroll: while running show force ratio tension even before slipping
   const scrollSpeed = SIM.running
-    ? (SIM.slipping ? SIM.vel : (p.fD/Math.max(p.fS,.01))*0.3)   // ratio of force = tension
+    ? (SIM.slipping ? SIM.vel : Math.min(0.4, (p.fD / Math.max(p.fS, 0.01)) * 0.35))
     : 0;
 
-  // Move world forward (positive Z in world = downhill past the car)
-  world.position.z -= scrollSpeed * SCROLL_SCALE * dt;
-  // Counter-scroll the car so it stays fixed in scene space
-  carGroup.position.z += scrollSpeed * SCROLL_SCALE * dt;
+  // Scroll road tiles and trees: move their Z in slopeGroup LOCAL space
+  // Positive = coming from ahead (negative z), moving toward behind (positive z behind car)
+  // Car sits at z=-6 in slopeGroup. Road comes from z=-large (ahead) to z=+large (behind).
+  // We move tiles +Z (toward camera) so road appears to pass under car downhill.
+  const dz = scrollSpeed * SCROLL * dt;
 
-  // Recycle road tiles
-  tiles.forEach(t=>{
-    // In scene space tile's z = t.position.z + world.position.z
-    const sceneZ = t.position.z + world.position.z;
-    if(sceneZ < -TILE_L * 1.2) {
-      // Tile scrolled behind camera; move it ahead (most positive z in world)
-      t.position.z += TILE_N * TILE_L;
+  tiles.forEach(t => {
+    t.position.z += dz;
+    // Recycle: once tile is well past the car (z > car.z + TILE_L*1.5), move it far ahead
+    if (t.position.z > car.position.z + TILE_L * 1.5) {
+      t.position.z -= TILE_N * TILE_L;
     }
   });
-  bankTiles.forEach(t=>{
-    const sceneZ=t.position.z+world.position.z;
-    if(sceneZ<-TILE_L*1.2) t.position.z+=BANK_N*TILE_L;
+  bankTiles.forEach(t => {
+    t.position.z += dz;
+    if (t.position.z > car.position.z + TILE_L * 1.5) t.position.z -= TILE_N * TILE_L;
   });
-
-  // Recycle trees — they move with world, recycle when past camera
-  trees.forEach(t=>{
-    const sceneZ=t.position.z+world.position.z;
-    if(sceneZ<-8){
-      // Put it way ahead
-      t.position.z+=TILE_N*TILE_L+Math.random()*TILE_L;
-      t.position.x=randTreeX();
-      t.rotation.y=Math.random()*Math.PI*2;
+  treeMeshes.forEach(t => {
+    t.position.z += dz;
+    if (t.position.z > car.position.z + TILE_L * 1.0) {
+      t.position.z -= TILE_N * TILE_L + Math.random() * TILE_L;
+      t.position.x = randX();
+      t.rotation.y = Math.random() * Math.PI * 2;
     }
   });
 
-  // Wheel spin — spin fast when slipping (tyre spinning > ground speed)
-  SIM.wheelAng += (SIM.vel*2.5 + (SIM.slipping?6:0))*dt;
-  wheelGroups.forEach(w=>{ w.rotation.x=SIM.wheelAng; });
+  // Tree stretch at speed (motion blur feel)
+  const stretch = 1 + Math.min(SIM.vel * 0.018, 0.18);
+  treeMeshes.forEach(t => { t.scale.z = stretch; });
 
-  // Skid marks & smoke
-  if(SIM.slipping && SIM.running){
-    skidTimer-=dt;
-    if(skidTimer<0){ addSkid(); skidTimer=.04; }
-    if(Math.random()<SIM.vel*.25*dt*60) spawnSmoke();
-  }
+  // Wheel spin
+  SIM.wheelAng += (SIM.vel * 2.8 + (SIM.slipping ? 5 : 0)) * dt;
+  wheels.forEach(w => { w.rotation.x = SIM.wheelAng; });
+
+  // Beacon + body colour
+  const slp = SIM.slipping;
+  beaconMat.color.setHex(slp ? 0xff3030 : 0x30ff80);
+  beaconMat.emissive.setHex(slp ? 0xff3030 : 0x30ff80);
+  beaconPt.color.setHex(slp ? 0xff3030 : 0x30ff80);
+  bodyMat.color.setHex(slp ? 0x280808 : 0x1e2060);
+  carFill.color.setHex(slp ? 0xff4020 : 0xffeedd);
+
   tickSmoke(dt);
 
-  // Beacon / body colour
-  beaconMat.color.setHex(SIM.slipping?0xff3030:0x30ff80);
-  beaconMat.emissive.setHex(SIM.slipping?0xff3030:0x30ff80);
-  beaconLight.color.setHex(SIM.slipping?0xff3030:0x30ff80);
-  bodyMat.color.setHex(SIM.slipping?0x2a0808:0x1a1a3a);
-  beaconLight.intensity = SIM.slipping?3:1.5;
-
-  // Tree wind-blur effect at speed: scale trees on X by velocity
-  const blur=1+Math.min(SIM.vel*.02,.15);
-  trees.forEach(t=>{ t.scale.x=blur; });
-
-  // Orbit target follows car in world space
+  // Camera follows car in world space
   const carWorld = new THREE.Vector3();
-  carGroup.getWorldPosition(carWorld);
-  oTgt.copy(carWorld).add(new THREE.Vector3(0, 1.2, 0));
+  car.getWorldPosition(carWorld);
+  // Smoothly lerp camera target to car position + slight look-ahead
+  camTarget.lerp(carWorld.add(new THREE.Vector3(0, 0.8, 0)), 0.07);
 
   updateCamera();
   updatePanel(p);
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
 requestAnimationFrame(animate);
 
-// ═══════════════════════════════════════════════════
-// PANEL
-// ═══════════════════════════════════════════════════
-function setEl(id,txt,cls){
-  const e=document.getElementById(id);
-  e.textContent=txt; e.className='dv'+(cls?' '+cls:'');
+// ════════════════════════════════════════════
+// HUD UPDATES
+// ════════════════════════════════════════════
+function setDv(id, txt, cls) {
+  const e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = txt;
+  e.className = 'dv' + (cls ? ' ' + cls : '');
 }
-function updatePanel(p){
-  setEl('d-ang', ST.angle.toFixed(1)+'°');
-  const v=SIM.vel;
-  setEl('d-vel', v.toFixed(2)+' m/s', v>5?'b':v>1?'w':'g');
-  setEl('d-acc', p.acc.toFixed(2)+' m/s²', p.acc>2?'b':p.acc>.3?'w':'g');
-  setEl('d-dst', totalDist.toFixed(1)+' m');
-  setEl('d-fd',  (p.fD/1000).toFixed(2)+' kN');
-  setEl('d-ff',  (p.fS/1000).toFixed(2)+' / '+(p.fK/1000).toFixed(2)+' kN');
-  setEl('d-thr', p.thr.toFixed(1)+'°');
-  setEl('d-gm',  (p.gm*100).toFixed(0)+'%', p.gm>=1?'g':p.gm>=.8?'w':'b');
 
-  if(SIM.slipping){
-    const s=v<.4?'ONSET':v<2.5?'SLIPPING':'SLIDING!';
-    setEl('d-st',s,'b');
+function updatePanel(p) {
+  setDv('d-ang', ST.angle.toFixed(1) + '°');
+  const v = SIM.vel;
+  setDv('d-vel', v.toFixed(2) + ' m/s', v>5?'b':v>1?'w':'g');
+  setDv('d-acc', p.acc.toFixed(2) + ' m/s²', p.acc>2?'b':p.acc>.3?'w':'g');
+  setDv('d-dst', SIM.dist.toFixed(1) + ' m');
+  setDv('d-fd',  (p.fD/1000).toFixed(2) + ' kN');
+  setDv('d-ff',  (p.fS/1000).toFixed(2) + ' / ' + (p.fK/1000).toFixed(2) + ' kN');
+  setDv('d-thr', p.thr.toFixed(1) + '°');
+  setDv('d-gm',  (p.gm*100).toFixed(0) + '%', p.gm>=1?'g':p.gm>=.8?'w':'b');
+
+  if (SIM.slipping) {
+    const s = v<.4?'ONSET':v<2.5?'SLIPPING':'SLIDING!';
+    setDv('d-st', s, 'b');
   } else {
-    const m=(p.fS-p.fD)/Math.max(p.fS,1);
-    setEl('d-st',m<.1?'CRITICAL':'HOLDING',m<.1?'w':'g');
+    const m = (p.fS - p.fD) / Math.max(p.fS, 1);
+    setDv('d-st', m<.1?'CRITICAL':'HOLDING', m<.1?'w':'g');
   }
 
-  const gm=Math.max(0,Math.min(1,p.grip));
-  const bar=document.getElementById('grip-bar');
-  bar.style.width=(gm*100)+'%';
-  bar.style.background=gm>.5?'var(--safe)':gm>.2?'var(--accent)':'var(--danger)';
+  const gm = Math.max(0, Math.min(1, p.grip));
+  const bar = document.getElementById('grip-bar');
+  if (bar) { bar.style.width=(gm*100)+'%'; bar.style.background=gm>.5?'#30ff80':gm>.2?'#f0c040':'#ff3030'; }
 
-  document.getElementById('slip-ov').classList.toggle('show',SIM.slipping&&v>.05);
-  const sh=document.getElementById('spdhud');
-  if(SIM.slipping&&v>.5){ sh.textContent=v.toFixed(1)+' m/s'; sh.classList.add('show'); }
-  else sh.classList.remove('show');
+  document.getElementById('sov').classList.toggle('on', SIM.slipping && v>.05);
+  const sh = document.getElementById('spd');
+  if (SIM.slipping && v>.5) { sh.textContent=v.toFixed(1)+' m/s ↓'; sh.classList.add('on'); }
+  else sh.classList.remove('on');
 }
 
-// ═══════════════════════════════════════════════════
+// ════════════════════════════════════════════
 // CONTROLS
-// ═══════════════════════════════════════════════════
-document.getElementById('sl-ang').addEventListener('input',function(){
-  ST.angle=parseFloat(this.value);
-  document.getElementById('v-ang').innerHTML=ST.angle.toFixed(1)+' <small>°</small>';
-  updateTilt();
+// ════════════════════════════════════════════
+document.getElementById('sl-ang').addEventListener('input', function() {
+  ST.angle = parseFloat(this.value);
+  document.getElementById('v-ang').innerHTML = ST.angle.toFixed(1) + ' <small>°</small>';
+  applyTilt();
 });
-document.getElementById('sl-mass').addEventListener('input',function(){
-  ST.mass=parseFloat(this.value);
-  document.getElementById('v-mass').innerHTML=ST.mass+' <small>kg</small>';
+document.getElementById('sl-mass').addEventListener('input', function() {
+  ST.mass = parseFloat(this.value);
+  document.getElementById('v-mass').innerHTML = ST.mass + ' <small>kg</small>';
 });
-document.getElementById('sel-surf').addEventListener('change',function(){
-  const [mu,t]=this.value.split('|');
-  ST.surfMu=parseFloat(mu); ST.surfType=t; updateGnote();
+document.getElementById('sel-surf').addEventListener('change', function() {
+  const [mu, t] = this.value.split('|');
+  ST.surfMu = parseFloat(mu); ST.surfType = t;
+  refreshGnote();
 });
 
-document.querySelectorAll('[data-c]').forEach(btn=>btn.addEventListener('click',function(){
-  document.querySelectorAll('[data-c]').forEach(b=>b.classList.remove('ca'));
-  this.classList.add('ca'); ST.compound=this.dataset.c;
-  const col=COMPOUNDS[ST.compound].col;
-  wheelGroups.forEach(w=>{ if(w.userData.tyreMat) w.userData.tyreMat.color.setHex(col); });
-  document.getElementById('cnote').textContent=COMPOUNDS[ST.compound].note;
-}));
+document.querySelectorAll('[data-c]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('[data-c]').forEach(b => b.classList.remove('ca'));
+    this.classList.add('ca');
+    ST.compound = this.dataset.c;
+    const col = CDATA[ST.compound].hexCol;
+    wheels.forEach(w => { if (w.userData.tyreMat) w.userData.tyreMat.color.setHex(col); });
+    document.getElementById('cnote').textContent = CDATA[ST.compound].note;
+  });
+});
 
-document.querySelectorAll('[data-g]').forEach(btn=>btn.addEventListener('click',function(){
-  document.querySelectorAll('[data-g]').forEach(b=>b.classList.remove('ga'));
-  this.classList.add('ga'); ST.groove=parseInt(this.dataset.g);
-  wheelGroups.forEach(w=>{ if(w.userData.rebuild) w.userData.rebuild(); });
-  updateGnote();
-}));
+document.querySelectorAll('[data-g]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('[data-g]').forEach(b => b.classList.remove('ga'));
+    this.classList.add('ga');
+    ST.groove = parseInt(this.dataset.g);
+    wheels.forEach(w => { if (w.userData.rebuild) w.userData.rebuild(); });
+    refreshGnote();
+  });
+});
 
-function updateGnote(){
-  const g=GROOVES[ST.groove];
-  const act=ST.surfType==='dry'?g.dry:ST.surfType==='snow'?g.snow:g.wet;
-  document.getElementById('gnote').textContent=g.note+' Active: '+(act*100).toFixed(0)+'%';
+function refreshGnote() {
+  const g = GDATA[ST.groove];
+  const act = ST.surfType==='dry' ? g.dry : ST.surfType==='snow' ? g.snow : g.wet;
+  document.getElementById('gnote').textContent = g.note + ' Active: ' + (act*100).toFixed(0) + '%';
 }
 
-document.getElementById('btn-run').addEventListener('click',function(){
-  if(SIM.running){
-    SIM.running=false; SIM.slipping=false; SIM.vel=0;
-    this.textContent='▶ RUN'; this.classList.remove('stop');
+document.getElementById('btn-run').addEventListener('click', function() {
+  if (SIM.running) {
+    SIM.running = false; SIM.slipping = false; SIM.vel = 0;
+    this.textContent = '▶ RUN'; this.classList.remove('stop');
   } else {
-    SIM.running=true;
-    this.textContent='■ STOP'; this.classList.add('stop');
+    SIM.running = true;
+    this.textContent = '■ STOP'; this.classList.add('stop');
   }
 });
 
-document.getElementById('btn-rst').addEventListener('click',function(){
-  SIM.vel=0; SIM.slipping=false; totalDist=0;
-  world.position.z=0;
-  carGroup.position.z=-3;
-  skidPool.forEach(m=>world.remove(m)); skidPool.length=0;
-  smoke.forEach(m=>scene.remove(m)); smoke.length=0;
+document.getElementById('btn-rst').addEventListener('click', function() {
+  SIM.vel = 0; SIM.slipping = false; SIM.dist = 0;
+  skidMeshes.forEach(m => slopeGroup.remove(m)); skidMeshes.length = 0;
+  smokeArr.forEach(m => scene.remove(m)); smokeArr.length = 0;
+  // Reset tile positions
+  tiles.forEach((t, i) => { t.position.z = -i * TILE_L; });
+  bankTiles.forEach((t, i) => { t.position.z = -i * TILE_L; });
+  treeMeshes.forEach(t => {
+    t.position.z = -Math.random() * TILE_L * TILE_N;
+    t.position.x = randX();
+  });
 });
 
-// Init
-document.getElementById('cnote').textContent=COMPOUNDS[ST.compound].note;
-updateGnote();
+// Init notes
+refreshGnote();
+
+} // end boot()
+})();
 </script>
 </body>
 </html>
