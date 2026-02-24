@@ -16,77 +16,66 @@
     --text: #e0e0f0;
     --muted: #606080;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  * { margin:0; padding:0; box-sizing:border-box; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'IBM Plex Sans', sans-serif;
-    min-height: 100vh;
+    height: 100vh;
     display: grid;
-    grid-template-rows: auto 1fr auto;
-    overflow-x: hidden;
+    grid-template-rows: 56px 1fr 32px;
+    overflow: hidden;
   }
-
   header {
-    padding: 20px 32px;
+    padding: 0 28px;
     border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 16px;
   }
-
   header h1 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
+    font-size: 2rem;
     letter-spacing: 4px;
     color: var(--accent);
   }
-
   header span {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: var(--muted);
     letter-spacing: 2px;
   }
-
   main {
     display: grid;
-    grid-template-columns: 300px 1fr 260px;
-    gap: 0;
-    height: calc(100vh - 100px);
+    grid-template-columns: 270px 1fr 250px;
+    overflow: hidden;
   }
-
   .panel {
     background: var(--panel);
     border-right: 1px solid var(--border);
-    padding: 24px;
+    padding: 18px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
-
-  .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
-
+  .panel.right { border-right: none; border-left: 1px solid var(--border); }
   .panel-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
+    font-size: 1rem;
     letter-spacing: 3px;
     color: var(--accent);
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
-
   label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     color: var(--muted);
     letter-spacing: 1px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     text-transform: uppercase;
   }
-
-  .control-group { margin-bottom: 24px; }
-
+  .ctrl { margin-bottom: 18px; }
   input[type="range"] {
     -webkit-appearance: none;
     width: 100%;
@@ -95,176 +84,152 @@
     border-radius: 2px;
     outline: none;
   }
-
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 14px; height: 14px;
     background: var(--accent);
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.1s;
   }
-
   input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
-
-  .value-display {
+  .val {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
+    font-size: 1.7rem;
     color: var(--text);
     line-height: 1;
-    margin-top: 6px;
+    margin-top: 4px;
   }
-
-  .value-display small {
+  .val small {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--muted);
   }
-
-  /* Tire compound selector */
+  select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    border-radius: 2px;
+    outline: none;
+  }
   .compounds {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 7px;
   }
-
-  .compound-btn {
+  .cbtn {
     border: 1px solid var(--border);
     background: transparent;
     color: var(--text);
-    padding: 12px 8px;
+    padding: 10px 6px;
     cursor: pointer;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
     text-align: center;
     transition: all 0.15s;
     border-radius: 2px;
+    line-height: 1.5;
   }
-
-  .compound-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  .compound-btn.active {
-    background: var(--accent);
-    color: #000;
-    border-color: var(--accent);
-    font-weight: 600;
-  }
-
-  .compound-dot {
-    width: 12px;
-    height: 12px;
+  .cbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .cbtn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .cdot {
+    width: 10px; height: 10px;
     border-radius: 50%;
-    margin: 0 auto 6px;
+    margin: 0 auto 5px;
   }
-
-  /* Simulation canvas area */
   .sim-area {
     background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     position: relative;
     overflow: hidden;
   }
-
-  canvas {
-    display: block;
-  }
-
+  canvas { display: block; width: 100%; height: 100%; }
   .slip-banner {
     position: absolute;
-    top: 50%;
+    top: 16%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 5rem;
+    font-size: 3rem;
     color: var(--danger);
-    letter-spacing: 8px;
+    letter-spacing: 6px;
     opacity: 0;
     pointer-events: none;
-    text-shadow: 0 0 40px #ff3a3a88;
-    transition: opacity 0.2s;
+    text-shadow: 0 0 30px #ff3a3a99;
+    white-space: nowrap;
   }
-
-  .slip-banner.show { opacity: 1; animation: flash 0.4s infinite alternate; }
-
-  @keyframes flash { from { opacity: 1; } to { opacity: 0.4; } }
-
-  /* Data panel */
-  .data-row {
+  .slip-banner.show { opacity: 1; animation: flash 0.35s infinite alternate; }
+  @keyframes flash { from {opacity:1} to {opacity:0.3} }
+  .drow {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    padding: 12px 0;
+    padding: 9px 0;
     border-bottom: 1px solid var(--border);
   }
-
-  .data-label {
+  .dlabel {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     color: var(--muted);
-    letter-spacing: 1px;
     text-transform: uppercase;
+    line-height: 1.4;
   }
-
-  .data-value {
+  .dval {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     line-height: 1;
+    text-align: right;
   }
-
-  .data-value.good { color: var(--safe); }
-  .data-value.warn { color: var(--accent); }
-  .data-value.bad { color: var(--danger); }
-
-  .grip-bar-wrap {
-    margin-top: 16px;
-  }
-
-  .grip-bar-track {
-    height: 8px;
-    background: var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 6px;
-  }
-
-  .grip-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.15s, background 0.3s;
-  }
-
+  .dval.good { color: var(--safe); }
+  .dval.warn { color: var(--accent); }
+  .dval.bad  { color: var(--danger); }
+  .bar-wrap { margin-top: 14px; }
+  .bar-track { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 5px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.1s, background 0.3s; }
   .btn-run {
     width: 100%;
-    margin-top: 20px;
+    margin-top: 16px;
     background: var(--accent);
     color: #000;
     border: none;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     letter-spacing: 3px;
-    padding: 14px;
+    padding: 12px;
     cursor: pointer;
     border-radius: 2px;
     transition: background 0.15s, transform 0.1s;
   }
-
   .btn-run:hover { background: #ffd060; transform: translateY(-1px); }
-  .btn-run:active { transform: translateY(0); }
-
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 10px 32px;
+  .btn-run.danger { background: #3a2020; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-reset {
+    width: 100%; margin-top: 8px;
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--muted);
+    font-size: 0.7rem; letter-spacing: 2px;
+    padding: 8px; cursor: pointer; border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .btn-reset:hover { color: var(--text); border-color: var(--text); }
+  .formula-box {
+    margin-top: 14px; padding: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.59rem; color: var(--muted); line-height: 1.9;
+  }
+  .formula-box .ft { color: var(--accent); letter-spacing: 2px; margin-bottom: 4px; font-size: 0.61rem; }
+  footer {
+    border-top: 1px solid var(--border); padding: 0 28px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+    display: flex; align-items: center; justify-content: space-between;
     letter-spacing: 1px;
-    display: flex;
-    justify-content: space-between;
   }
 </style>
 </head>
@@ -272,457 +237,518 @@
 
 <header>
   <h1>GRIP</h1>
-  <span>SLOPE SLIP SIMULATOR v1.0</span>
+  <span>SLOPE SLIP SIMULATOR v2.0 — STATIC vs KINETIC FRICTION</span>
 </header>
 
 <main>
-  <!-- LEFT PANEL -->
   <div class="panel">
     <div class="panel-title">Parameters</div>
 
-    <div class="control-group">
+    <div class="ctrl">
       <label>Slope Angle</label>
-      <input type="range" id="angle" min="0" max="75" value="20" step="0.5">
-      <div class="value-display" id="angle-display">20 <small>°</small></div>
+      <input type="range" id="angle" min="0" max="80" value="15" step="0.5">
+      <div class="val" id="angle-display">15.0 <small>°</small></div>
     </div>
 
-    <div class="control-group">
+    <div class="ctrl">
       <label>Vehicle Mass</label>
-      <input type="range" id="mass" min="500" max="5000" value="1500" step="50">
-      <div class="value-display" id="mass-display">1500 <small>kg</small></div>
+      <input type="range" id="mass" min="200" max="5000" value="1200" step="50">
+      <div class="val" id="mass-display">1200 <small>kg</small></div>
     </div>
 
-    <div class="control-group">
+    <div class="ctrl">
       <label>Surface Condition</label>
-      <select id="surface" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;border-radius:2px;outline:none;">
+      <select id="surface">
         <option value="1.0">Dry Asphalt</option>
-        <option value="0.7">Wet Asphalt</option>
-        <option value="0.35">Packed Snow</option>
-        <option value="0.15">Black Ice</option>
-        <option value="0.55">Gravel</option>
-        <option value="0.6">Wet Grass</option>
+        <option value="0.65">Wet Asphalt</option>
+        <option value="0.3">Packed Snow</option>
+        <option value="0.12">Black Ice</option>
+        <option value="0.5">Gravel</option>
+        <option value="0.55">Wet Grass</option>
       </select>
     </div>
 
-    <div class="control-group">
-      <label>Tire Compound</label>
-      <div class="compounds" id="compounds">
-        <button class="compound-btn active" data-mu="1.0" data-name="SLICK">
-          <div class="compound-dot" style="background:#e8e0d0"></div>SLICK
+    <div class="ctrl">
+      <label>Surface / Compound</label>
+      <div class="compounds">
+        <button class="cbtn" data-mus="0.85" data-muk="0.60" data-name="HARD RUBBER">
+          <div class="cdot" style="background:#c0c0c0"></div>HARD<br>RUBBER
         </button>
-        <button class="compound-btn" data-mu="0.85" data-name="SOFT">
-          <div class="compound-dot" style="background:#ff4444"></div>SOFT
+        <button class="cbtn active" data-mus="1.2" data-muk="0.9" data-name="SOFT RUBBER">
+          <div class="cdot" style="background:#ff5050"></div>SOFT<br>RUBBER
         </button>
-        <button class="compound-btn" data-mu="0.75" data-name="MEDIUM">
-          <div class="compound-dot" style="background:#f0c040"></div>MEDIUM
+        <button class="cbtn" data-mus="1.6" data-muk="1.3" data-name="SANDPAPER">
+          <div class="cdot" style="background:#d4a860"></div>SAND-<br>PAPER
         </button>
-        <button class="compound-btn" data-mu="0.65" data-name="HARD">
-          <div class="compound-dot" style="background:#ffffff"></div>HARD
-        </button>
-        <button class="compound-btn" data-mu="0.55" data-name="WINTER">
-          <div class="compound-dot" style="background:#88ccff"></div>WINTER
-        </button>
-        <button class="compound-btn" data-mu="0.3" data-name="BALD">
-          <div class="compound-dot" style="background:#555555"></div>BALD
+        <button class="cbtn" data-mus="0.12" data-muk="0.06" data-name="TEFLON">
+          <div class="cdot" style="background:#88eeff"></div>TEFLON<br><span style="font-size:0.55rem;color:var(--muted)">(slippery)</span>
         </button>
       </div>
     </div>
 
     <button class="btn-run" id="runBtn">▶ RUN SIMULATION</button>
+    <button class="btn-reset" id="resetBtn">↺ RESET POSITION</button>
   </div>
 
-  <!-- CANVAS -->
   <div class="sim-area">
     <canvas id="simCanvas"></canvas>
-    <div class="slip-banner" id="slipBanner">SLIPPING!</div>
+    <div class="slip-banner" id="slipBanner">⚠ SLIPPING</div>
   </div>
 
-  <!-- DATA PANEL -->
-  <div class="panel">
+  <div class="panel right">
     <div class="panel-title">Live Data</div>
-
-    <div class="data-row">
-      <div class="data-label">Slope Angle</div>
-      <div class="data-value" id="d-angle">—</div>
-    </div>
-    <div class="data-row">
-      <div class="data-label">Gravity Component<br>Down Slope</div>
-      <div class="data-value" id="d-fdown">—</div>
-    </div>
-    <div class="data-row">
-      <div class="data-label">Normal Force</div>
-      <div class="data-value" id="d-fnorm">—</div>
-    </div>
-    <div class="data-row">
-      <div class="data-label">Max Static Friction</div>
-      <div class="data-value" id="d-ffrict">—</div>
-    </div>
-    <div class="data-row">
-      <div class="data-label">Slip Threshold</div>
-      <div class="data-value" id="d-thresh">—</div>
-    </div>
-    <div class="data-row">
-      <div class="data-label">Status</div>
-      <div class="data-value" id="d-status">—</div>
-    </div>
-
-    <div class="grip-bar-wrap">
+    <div class="drow"><div class="dlabel">Angle</div><div class="dval" id="d-angle">—</div></div>
+    <div class="drow"><div class="dlabel">Velocity<br>Down-Slope</div><div class="dval" id="d-vel">—</div></div>
+    <div class="drow"><div class="dlabel">Acceleration</div><div class="dval" id="d-acc">—</div></div>
+    <div class="drow"><div class="dlabel">F Down-Slope</div><div class="dval" id="d-fdown">—</div></div>
+    <div class="drow"><div class="dlabel">Max Static Friction<br>/ Kinetic Friction</div><div class="dval" id="d-ffrict">—</div></div>
+    <div class="drow"><div class="dlabel">Slip Threshold</div><div class="dval" id="d-thresh">—</div></div>
+    <div class="drow"><div class="dlabel">Status</div><div class="dval" id="d-status">—</div></div>
+    <div class="bar-wrap">
       <label>Grip Margin</label>
-      <div class="grip-bar-track">
-        <div class="grip-bar-fill" id="gripBar" style="width:100%;background:var(--safe)"></div>
-      </div>
+      <div class="bar-track"><div class="bar-fill" id="gripBar" style="width:100%;background:var(--safe)"></div></div>
     </div>
-
-    <div style="margin-top:20px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:2px;">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--muted);line-height:1.8;">
-        <div style="color:var(--accent);margin-bottom:6px;letter-spacing:2px;">FORMULA</div>
-        μ = tan(θ) → slip threshold<br>
-        F_down = mg·sin(θ)<br>
-        F_normal = mg·cos(θ)<br>
-        F_friction = μ_tire × μ_surface × F_normal<br>
-        <span style="color:var(--danger)">SLIP if F_down > F_friction</span>
-      </div>
+    <div class="formula-box">
+      <div class="ft">PHYSICS MODEL</div>
+      Holds while: F↓ ≤ μ_s × μ_surface × F_normal<br><br>
+      Once broken — kinetic takes over:<br>
+      F_k = μ_k × μ_surface × F_normal<br>
+      (μ_k &lt; μ_s always → slip grows)<br><br>
+      a = (F↓ − F_k) / m<br>
+      v += a × dt<br>
+      <span style="color:var(--danger)">velocity accumulates over time</span>
     </div>
   </div>
 </main>
 
 <footer>
-  <span>Physics: μ_static × Normal Force vs Gravity Component</span>
-  <span>bennett, co — grip sim</span>
+  <span>μ_static &gt; μ_kinetic — the Stribeck effect makes slip self-reinforcing</span>
+  <span>bennett, co — grip sim v2</span>
 </footer>
 
 <script>
 const canvas = document.getElementById('simCanvas');
 const ctx = canvas.getContext('2d');
 
-let animFrame = null;
-let slipping = false;
-let slipProgress = 0; // 0..1 how far down the car has slid
-let simRunning = false;
+// Compound data: static and kinetic friction coefficients
+const COMPOUNDS = {
+  'HARD RUBBER': { mus: 0.85, muk: 0.60, color: '#c0c0c0' },
+  'SOFT RUBBER': { mus: 1.20, muk: 0.90, color: '#ff5050' },
+  'SANDPAPER':   { mus: 1.60, muk: 1.30, color: '#d4a860' },
+  'TEFLON':      { mus: 0.12, muk: 0.06, color: '#88eeff' },
+};
 
-// State
-let state = {
-  angle: 20,
-  mass: 1500,
+const state = {
+  angle: 15,
+  mass: 1200,
   surfaceMu: 1.0,
-  tireMu: 1.0,
-  tireName: 'SLICK'
+  compound: 'SOFT RUBBER',
+};
+
+const sim = {
+  running: false,
+  isSlipping: false,
+  velocity: 0,      // m/s down-slope
+  position: 0.68,   // 0=bottom, 1=top of slope
+  lastTime: null,
+  wheelAngle: 0,
+  skidMarks: [],    // array of {t, alpha}
 };
 
 const G = 9.81;
 
-function computePhysics() {
+function getC() { return COMPOUNDS[state.compound]; }
+
+function physics() {
   const theta = state.angle * Math.PI / 180;
-  const fDown = state.mass * G * Math.sin(theta);
-  const fNorm = state.mass * G * Math.cos(theta);
-  const muCombined = state.tireMu * state.surfaceMu;
-  const fFriction = muCombined * fNorm;
-  const threshAngle = Math.atan(muCombined) * 180 / Math.PI;
-  const isSlipping = fDown > fFriction;
-  const gripMargin = fFriction > 0 ? Math.min(1, fFriction / fDown) : 0;
-  return { fDown, fNorm, fFriction, threshAngle, isSlipping, gripMargin, muCombined };
+  const c = getC();
+  const mu_s = c.mus * state.surfaceMu;
+  const mu_k = c.muk * state.surfaceMu;
+  const fNorm    = state.mass * G * Math.cos(theta);
+  const fDown    = state.mass * G * Math.sin(theta);
+  const fStatic  = mu_s * fNorm;
+  const fKinetic = mu_k * fNorm;
+  const threshAngle = Math.atan(mu_s) * 180 / Math.PI;
+  const fNet = fDown - fKinetic;
+  const accel = sim.isSlipping ? Math.max(0, fNet) / state.mass : 0;
+  const gripMargin = fStatic > 0 ? Math.min(1, fStatic / Math.max(fDown, 0.001)) : 1;
+  return { fDown, fNorm, fStatic, fKinetic, fNet, accel, threshAngle, gripMargin };
 }
 
+// Resize canvas
 function resize() {
-  const area = canvas.parentElement;
-  canvas.width = area.clientWidth;
-  canvas.height = area.clientHeight;
+  const el = canvas.parentElement;
+  canvas.width  = el.clientWidth;
+  canvas.height = el.clientHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); if (!sim.running) draw(physics()); });
+
+// Slope geometry helper
+function slopeGeom() {
+  const W = canvas.width, H = canvas.height;
+  const angleRad = state.angle * Math.PI / 180;
+  const len = Math.min(W, H) * 0.8;
+  const cx = W * 0.5, cy = H * 0.63;
+  const x1 = cx - len * 0.5 * Math.cos(angleRad);
+  const y1 = cy + len * 0.5 * Math.sin(angleRad);
+  const x2 = cx + len * 0.5 * Math.cos(angleRad);
+  const y2 = cy - len * 0.5 * Math.sin(angleRad);
+  return { x1, y1, x2, y2, len, angleRad, cx, cy, W, H };
 }
 
-resize();
-window.addEventListener('resize', () => { resize(); draw(); });
+function draw(phy) {
+  const g = slopeGeom();
+  const { x1, y1, x2, y2, len, angleRad, W, H } = g;
 
-function draw() {
-  const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
-  const physics = computePhysics();
-  const angleDeg = state.angle;
-  const angleRad = angleDeg * Math.PI / 180;
-
-  // Draw slope
-  const slopeLength = Math.min(W, H) * 0.7;
-  const cx = W * 0.5;
-  const cy = H * 0.6;
-
-  const x1 = cx - slopeLength * 0.5 * Math.cos(angleRad);
-  const y1 = cy + slopeLength * 0.5 * Math.sin(angleRad);
-  const x2 = cx + slopeLength * 0.5 * Math.cos(angleRad);
-  const y2 = cy - slopeLength * 0.5 * Math.sin(angleRad);
-
-  // Ground fill
+  // ── Slope fill ──
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
-  ctx.lineTo(x2, H + 50);
-  ctx.lineTo(x1, H + 50);
-  ctx.fillStyle = '#16161f';
+  ctx.lineTo(x2 + 80, H + 30);
+  ctx.lineTo(x1 - 80, H + 30);
+  ctx.fillStyle = '#111120';
   ctx.fill();
 
-  // Surface texture lines
+  // Hatch texture
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(-angleRad);
-  for (let i = -slopeLength/2; i < slopeLength/2; i += 20) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.lineTo(x2 + 80, H + 30); ctx.lineTo(x1 - 80, H + 30);
+  ctx.clip();
+  ctx.strokeStyle = '#191928';
+  ctx.lineWidth = 1;
+  for (let i = -len; i < len * 2; i += 16) {
     ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, 40);
-    ctx.strokeStyle = '#1e1e2e';
-    ctx.lineWidth = 1;
+    ctx.moveTo(x1 + i, y1 - 20);
+    ctx.lineTo(x1 + i - 300, y1 + 600);
     ctx.stroke();
   }
   ctx.restore();
 
-  // Slope line
+  // Slope edge
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.strokeStyle = '#3a3a5a';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = '#303060'; ctx.lineWidth = 2;
+  ctx.setLineDash([]); ctx.stroke();
 
   // Angle arc
   ctx.beginPath();
-  ctx.arc(x1, y1, 50, -Math.PI, -Math.PI + angleRad, false);
-  ctx.strokeStyle = '#f0c04055';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.fillStyle = '#f0c040aa';
-  ctx.font = '600 13px IBM Plex Mono';
-  ctx.fillText(angleDeg + '°', x1 + 55, y1 - 10);
+  ctx.arc(x1, y1, 52, -Math.PI, -Math.PI + angleRad, false);
+  ctx.strokeStyle = '#f0c04033'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#f0c040cc';
+  ctx.font = 'bold 12px IBM Plex Mono';
+  ctx.fillText(state.angle.toFixed(1) + '°', x1 + 58, y1 - 10);
 
-  // Car position on slope
-  const carT = simRunning && slipping ? 0.7 - slipProgress * 0.5 : 0.65;
-  const carX = x1 + (x2 - x1) * carT;
-  const carY = y1 + (y2 - y1) * carT;
+  // Threshold dashed line
+  if (phy) {
+    const trRad = phy.threshAngle * Math.PI / 180;
+    const tx1 = g.cx - len * 0.5 * Math.cos(trRad);
+    const ty1 = g.cy + len * 0.5 * Math.sin(trRad);
+    const tx2 = g.cx + len * 0.5 * Math.cos(trRad);
+    const ty2 = g.cy - len * 0.5 * Math.sin(trRad);
+    ctx.beginPath();
+    ctx.moveTo(tx1, ty1); ctx.lineTo(tx2, ty2);
+    ctx.strokeStyle = '#ff3a3a28'; ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#ff3a3a55'; ctx.font = '10px IBM Plex Mono';
+    ctx.fillText('slip threshold ' + phy.threshAngle.toFixed(1) + '°', tx2 - 100, ty2 - 7);
+  }
 
-  // Draw car (sled shape)
+  // Car position
+  const t = Math.max(0.03, Math.min(0.94, sim.position));
+  const carX = x1 + (x2 - x1) * t;
+  const carY = y1 + (y2 - y1) * t;
+
+  // Skid marks
+  if (sim.isSlipping && sim.velocity > 0.3) {
+    const sk = { t, alpha: Math.min(0.5, sim.velocity * 0.04) };
+    sim.skidMarks.push(sk);
+    if (sim.skidMarks.length > 120) sim.skidMarks.shift();
+  }
+  sim.skidMarks.forEach(sk => {
+    const sx = x1 + (x2 - x1) * sk.t;
+    const sy = y1 + (y2 - y1) * sk.t;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(-angleRad);
+    ctx.strokeStyle = `rgba(200,60,30,${sk.alpha * 0.5})`;
+    ctx.lineWidth = 5;
+    ctx.setLineDash([3, 5]);
+    [-13, 13].forEach(ox => {
+      ctx.beginPath(); ctx.moveTo(ox, 10); ctx.lineTo(ox + 18, 10); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.restore();
+  });
+
+  // ── Draw car ──
   ctx.save();
   ctx.translate(carX, carY);
   ctx.rotate(-angleRad);
 
-  const carW = 70, carH = 28;
+  const cW = 70, cH = 24;
+  const c = getC();
+  const slip = sim.isSlipping;
 
   // Wheels
-  const wheelColor = physics.isSlipping ? '#ff3a3a' : '#888';
-  const wheelRadius = 10;
-
-  // Tire compound color on wheel
-  const tireColors = { SLICK:'#e8e0d0', SOFT:'#ff4444', MEDIUM:'#f0c040', HARD:'#ffffff', WINTER:'#88ccff', BALD:'#555555' };
-  const tireColor = tireColors[state.tireName] || '#888';
-
-  [-carW*0.3, carW*0.3].forEach(wx => {
+  const wR = 11;
+  [-cW * 0.3, cW * 0.3].forEach(wx => {
+    // Tire body
     ctx.beginPath();
-    ctx.arc(wx, carH/2, wheelRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#222';
-    ctx.fill();
-    ctx.strokeStyle = tireColor;
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    ctx.arc(wx, cH / 2, wR, 0, Math.PI * 2);
+    ctx.fillStyle = '#181818'; ctx.fill();
+    ctx.strokeStyle = c.color; ctx.lineWidth = 4; ctx.stroke();
 
-    // Wheel spin indicator when slipping
-    if (simRunning && slipping) {
+    // Hub
+    ctx.beginPath();
+    ctx.arc(wx, cH / 2, wR * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = '#303030'; ctx.fill();
+
+    // Spokes (rotate with velocity)
+    ctx.save();
+    ctx.translate(wx, cH / 2);
+    ctx.rotate(sim.wheelAngle);
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 1.5;
+    for (let s = 0; s < 4; s++) {
       ctx.beginPath();
-      ctx.moveTo(wx, carH/2);
-      ctx.lineTo(wx, carH/2 - wheelRadius + 2);
-      ctx.strokeStyle = '#ff3a3a';
-      ctx.lineWidth = 2;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(s * Math.PI / 2) * wR * 0.38, Math.sin(s * Math.PI / 2) * wR * 0.38);
       ctx.stroke();
+    }
+    ctx.restore();
+
+    // Smoke when slipping fast
+    if (slip && sim.velocity > 1.5) {
+      const smokeR = 4 + sim.velocity * 0.8;
+      ctx.beginPath();
+      ctx.arc(wx, cH / 2 + wR + 2, smokeR, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,120,30,${Math.min(0.35, sim.velocity * 0.025)})`;
+      ctx.fill();
     }
   });
 
-  // Body
+  // Car body
   ctx.beginPath();
-  ctx.roundRect(-carW/2, -carH/2, carW, carH, 4);
-  ctx.fillStyle = slipping ? '#2a1010' : '#1a1a2e';
+  ctx.roundRect(-cW / 2, -cH / 2, cW, cH, 4);
+  ctx.fillStyle = slip ? '#200e0e' : '#10102a';
   ctx.fill();
-  ctx.strokeStyle = slipping ? '#ff3a3a' : '#3a3a6a';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = slip ? '#ff3a3a' : '#3535a0';
+  ctx.lineWidth = slip ? 2 : 1.5;
   ctx.stroke();
 
   // Windshield
   ctx.beginPath();
-  ctx.moveTo(carW/2 - 20, -carH/2);
-  ctx.lineTo(carW/2 - 5, -carH/2 + 10);
-  ctx.lineTo(carW/2 - 5, carH/2 - 10);
-  ctx.strokeStyle = '#4a8aff44';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  ctx.moveTo(cW/2 - 17, -cH/2); ctx.lineTo(cW/2 - 6, -cH/2 + 8); ctx.lineTo(cW/2 - 6, cH/2 - 8);
+  ctx.strokeStyle = '#4a8aff2a'; ctx.lineWidth = 2; ctx.stroke();
 
-  // Status light on car
+  // Hood line
   ctx.beginPath();
-  ctx.arc(0, -carH/2 - 5, 4, 0, Math.PI*2);
-  ctx.fillStyle = slipping ? '#ff3a3a' : '#3aff8a';
-  ctx.fill();
-  ctx.shadowColor = slipping ? '#ff3a3a' : '#3aff8a';
-  ctx.shadowBlur = 10;
-  ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.moveTo(cW/2 - 17, -cH/2); ctx.lineTo(cW/2, -cH/2);
+  ctx.strokeStyle = '#404080'; ctx.lineWidth = 1; ctx.stroke();
 
-  ctx.restore();
+  // Status light
+  ctx.beginPath();
+  ctx.arc(0, -cH/2 - 6, 4, 0, Math.PI * 2);
+  const bc = slip ? '#ff3a3a' : '#3aff8a';
+  ctx.fillStyle = bc;
+  ctx.shadowColor = bc; ctx.shadowBlur = slip ? 16 : 8;
+  ctx.fill(); ctx.shadowBlur = 0;
 
-  // Force vectors
-  if (simRunning) {
-    const scale = 0.04;
-    const phy = physics;
-
-    // Down-slope force (red)
-    const fDownLen = phy.fDown * scale;
-    ctx.beginPath();
-    ctx.moveTo(carX, carY);
-    ctx.lineTo(carX + Math.cos(-angleRad + Math.PI) * fDownLen, carY + Math.sin(-angleRad + Math.PI) * fDownLen);
-    ctx.strokeStyle = '#ff3a3a';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([]);
-    ctx.stroke();
-    drawArrow(ctx, carX + Math.cos(-angleRad + Math.PI) * fDownLen, carY + Math.sin(-angleRad + Math.PI) * fDownLen, -angleRad + Math.PI, '#ff3a3a');
-
-    // Friction force (green, opposing)
-    const fFrictLen = Math.min(phy.fFriction, phy.fDown + 2000) * scale;
-    ctx.beginPath();
-    ctx.moveTo(carX, carY);
-    ctx.lineTo(carX + Math.cos(-angleRad) * fFrictLen, carY + Math.sin(-angleRad) * fFrictLen);
-    ctx.strokeStyle = slipping ? '#ff7a00' : '#3aff8a';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    drawArrow(ctx, carX + Math.cos(-angleRad) * fFrictLen, carY + Math.sin(-angleRad) * fFrictLen, -angleRad, slipping ? '#ff7a00' : '#3aff8a');
-
-    // Normal force (blue)
-    const fNormLen = phy.fNorm * scale * 0.5;
-    const perpAngle = -angleRad - Math.PI/2;
-    ctx.beginPath();
-    ctx.moveTo(carX, carY);
-    ctx.lineTo(carX + Math.cos(perpAngle) * fNormLen, carY + Math.sin(perpAngle) * fNormLen);
-    ctx.strokeStyle = '#4a8aff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    drawArrow(ctx, carX + Math.cos(perpAngle) * fNormLen, carY + Math.sin(perpAngle) * fNormLen, perpAngle, '#4a8aff');
-
-    // Legend
-    const lx = 20, ly = 30;
-    ctx.font = '12px IBM Plex Mono';
-    [[`F_down = ${(phy.fDown/1000).toFixed(2)} kN`, '#ff3a3a'],
-     [`F_friction = ${(phy.fFriction/1000).toFixed(2)} kN`, slipping ? '#ff7a00' : '#3aff8a'],
-     [`F_normal = ${(phy.fNorm/1000).toFixed(2)} kN`, '#4a8aff']
-    ].forEach(([text, color], i) => {
-      ctx.fillStyle = color;
-      ctx.fillText(text, lx, ly + i * 20);
-    });
+  // Velocity label above car when sliding
+  if (slip && sim.velocity > 0.1) {
+    ctx.font = 'bold 13px Bebas Neue';
+    ctx.fillStyle = '#ff3a3a';
+    ctx.textAlign = 'center';
+    ctx.fillText(sim.velocity.toFixed(1) + ' m/s', 0, -cH/2 - 16);
+    ctx.textAlign = 'left';
   }
 
-  // Update data panel
-  updateDataPanel(physics);
+  ctx.restore();
+
+  // ── Force vectors ──
+  if (sim.running && phy) {
+    const sc = 0.036;
+    const isSlip = sim.isSlipping;
+    const frForce = isSlip ? phy.fKinetic : phy.fStatic;
+    const frColor = isSlip ? '#ff8800' : '#3aff8a';
+
+    drawVec(carX, carY, phy.fDown * sc, -angleRad + Math.PI, '#ff3a3a', 2.5);
+    drawVec(carX, carY, Math.min(frForce, phy.fDown + 500) * sc, -angleRad, frColor, 2.5);
+    drawVec(carX, carY, phy.fNorm * sc * 0.4, -angleRad - Math.PI/2, '#4a8aff', 1.8);
+    if (isSlip && phy.fNet > 50) {
+      drawVec(carX, carY, phy.fNet * sc, -angleRad + Math.PI, '#ff6600', 3.5);
+    }
+
+    // Legend
+    ctx.font = '11px IBM Plex Mono';
+    const lines = [
+      [`F↓ = ${(phy.fDown/1000).toFixed(2)} kN (down-slope gravity)`, '#ff3a3a'],
+      [`F_${isSlip?'kinetic':'static'} = ${(frForce/1000).toFixed(2)} kN`, frColor],
+      [`F_normal = ${(phy.fNorm/1000).toFixed(2)} kN`, '#4a8aff'],
+    ];
+    if (isSlip && phy.fNet > 0) lines.push([`F_net = ${(phy.fNet/1000).toFixed(2)} kN (accel!)`, '#ff6600']);
+    lines.forEach(([txt, col], i) => {
+      ctx.fillStyle = col;
+      ctx.fillText(txt, 14, 26 + i * 18);
+    });
+  }
 }
 
-function drawArrow(ctx, x, y, angle, color) {
+function drawVec(ox, oy, len, angle, color, lw) {
+  if (len < 3) return;
+  const ex = ox + Math.cos(angle) * len;
+  const ey = oy + Math.sin(angle) * len;
+  ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey);
+  ctx.strokeStyle = color; ctx.lineWidth = lw;
+  ctx.setLineDash([]); ctx.stroke();
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(-8, -5);
-  ctx.lineTo(-8, 5);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
+  ctx.translate(ex, ey); ctx.rotate(angle);
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-10,-5); ctx.lineTo(-10,5);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   ctx.restore();
 }
 
-function updateDataPanel(p) {
-  const angleDeg = state.angle;
-  document.getElementById('d-angle').textContent = angleDeg.toFixed(1) + '°';
-  document.getElementById('d-fdown').textContent = (p.fDown / 1000).toFixed(2) + ' kN';
-  document.getElementById('d-fnorm').textContent = (p.fNorm / 1000).toFixed(2) + ' kN';
-  document.getElementById('d-ffrict').textContent = (p.fFriction / 1000).toFixed(2) + ' kN';
-  document.getElementById('d-thresh').textContent = p.threshAngle.toFixed(1) + '°';
+function updatePanel(phy) {
+  document.getElementById('d-angle').textContent = state.angle.toFixed(1) + '°';
 
-  const statusEl = document.getElementById('d-status');
-  if (p.isSlipping) {
-    statusEl.textContent = 'SLIPPING';
-    statusEl.className = 'data-value bad';
+  const v = sim.velocity;
+  const vEl = document.getElementById('d-vel');
+  vEl.textContent = v.toFixed(2) + ' m/s';
+  vEl.className = 'dval ' + (v > 5 ? 'bad' : v > 1 ? 'warn' : 'good');
+
+  const aEl = document.getElementById('d-acc');
+  aEl.textContent = phy.accel.toFixed(2) + ' m/s²';
+  aEl.className = 'dval ' + (phy.accel > 2 ? 'bad' : phy.accel > 0.3 ? 'warn' : 'good');
+
+  document.getElementById('d-fdown').textContent  = (phy.fDown/1000).toFixed(2) + ' kN';
+  document.getElementById('d-ffrict').textContent = `${(phy.fStatic/1000).toFixed(2)} / ${(phy.fKinetic/1000).toFixed(2)} kN`;
+  document.getElementById('d-thresh').textContent = phy.threshAngle.toFixed(1) + '°';
+
+  const st = document.getElementById('d-status');
+  if (sim.isSlipping) {
+    const s = v < 0.4 ? 'ONSET' : v < 2.5 ? 'SLIPPING' : 'SLIDING!';
+    st.textContent = s; st.className = 'dval bad';
   } else {
-    const margin = (p.fFriction - p.fDown) / p.fFriction;
-    if (margin < 0.15) {
-      statusEl.textContent = 'CRITICAL';
-      statusEl.className = 'data-value warn';
-    } else {
-      statusEl.textContent = 'HOLDING';
-      statusEl.className = 'data-value good';
+    const m = (phy.fStatic - phy.fDown) / Math.max(phy.fStatic, 1);
+    st.textContent = m < 0.1 ? 'CRITICAL' : 'HOLDING';
+    st.className = 'dval ' + (m < 0.1 ? 'warn' : 'good');
+  }
+
+  const gm = Math.max(0, Math.min(1, phy.gripMargin));
+  const bar = document.getElementById('gripBar');
+  bar.style.width = (gm * 100) + '%';
+  bar.style.background = gm > 0.5 ? 'var(--safe)' : gm > 0.2 ? 'var(--accent)' : 'var(--danger)';
+
+  document.getElementById('slipBanner').classList.toggle('show', sim.isSlipping && v > 0.05);
+}
+
+// ── Simulation loop ──
+let animFrame = null;
+
+function step(ts) {
+  if (!sim.lastTime) sim.lastTime = ts;
+  const dt = Math.min((ts - sim.lastTime) / 1000, 0.05);
+  sim.lastTime = ts;
+
+  const phy = physics();
+
+  // State machine: static → kinetic
+  if (!sim.isSlipping) {
+    if (phy.fDown > phy.fStatic) {
+      sim.isSlipping = true;
+      sim.velocity = 0.005; // tiny seed velocity = "just barely starting"
     }
   }
 
-  const margin = Math.min(1, p.gripMargin);
-  const bar = document.getElementById('gripBar');
-  bar.style.width = (margin * 100) + '%';
-  if (margin > 0.5) bar.style.background = 'var(--safe)';
-  else if (margin > 0.2) bar.style.background = 'var(--accent)';
-  else bar.style.background = 'var(--danger)';
-}
+  if (sim.isSlipping) {
+    // Net acceleration: only if fDown > fKinetic
+    // (can be negative if user lowers angle while moving — decelerates)
+    const acc = (phy.fDown - phy.fKinetic) / state.mass;
+    sim.velocity += acc * dt;
+    sim.velocity = Math.max(0, sim.velocity);
 
-function animateSlip() {
-  const physics = computePhysics();
-  slipping = physics.isSlipping;
+    // If decelerated to stop AND static friction now holds → stop slipping
+    if (sim.velocity === 0 && phy.fDown <= phy.fStatic) {
+      sim.isSlipping = false;
+    }
 
-  const banner = document.getElementById('slipBanner');
-  if (slipping) {
-    banner.classList.add('show');
-    slipProgress = Math.min(1, slipProgress + 0.008);
-  } else {
-    banner.classList.remove('show');
-    slipProgress = 0;
+    // Move car position down slope
+    const g = slopeGeom();
+    const pixPerMeter = 80; // tune: 1 m/s moves 80px/s
+    const dPos = (sim.velocity * dt * pixPerMeter) / g.len;
+    sim.position -= dPos;
+    sim.position = Math.max(0.03, sim.position);
   }
 
-  draw();
-  animFrame = requestAnimationFrame(animateSlip);
+  // Wheel spin animation
+  // When slipping: wheels spin faster than ground speed (skid)
+  sim.wheelAngle += (sim.velocity * 1.5 + (sim.isSlipping ? 3 : 0)) * dt;
+
+  draw(phy);
+  updatePanel(phy);
+  animFrame = requestAnimationFrame(step);
 }
 
-// Controls
+function startSim() {
+  if (sim.running) return;
+  sim.running = true; sim.lastTime = null;
+  document.getElementById('runBtn').textContent = '■ STOP';
+  document.getElementById('runBtn').classList.add('danger');
+  animFrame = requestAnimationFrame(step);
+}
+
+function stopSim() {
+  cancelAnimationFrame(animFrame);
+  sim.running = false;
+  document.getElementById('runBtn').textContent = '▶ RUN SIMULATION';
+  document.getElementById('runBtn').classList.remove('danger');
+  draw(physics()); updatePanel(physics());
+}
+
+function resetPos() {
+  sim.position = 0.68; sim.velocity = 0;
+  sim.isSlipping = false; sim.lastTime = null;
+  sim.skidMarks = [];
+  document.getElementById('slipBanner').classList.remove('show');
+  if (!sim.running) { draw(physics()); updatePanel(physics()); }
+}
+
+// ── Event listeners ──
+document.getElementById('runBtn').addEventListener('click', () => sim.running ? stopSim() : startSim());
+document.getElementById('resetBtn').addEventListener('click', resetPos);
+
 document.getElementById('angle').addEventListener('input', function() {
   state.angle = parseFloat(this.value);
-  document.getElementById('angle-display').innerHTML = state.angle + ' <small>°</small>';
-  if (!simRunning) draw();
+  document.getElementById('angle-display').innerHTML = state.angle.toFixed(1) + ' <small>°</small>';
+  if (!sim.running) { draw(physics()); updatePanel(physics()); }
 });
 
 document.getElementById('mass').addEventListener('input', function() {
   state.mass = parseFloat(this.value);
   document.getElementById('mass-display').innerHTML = state.mass + ' <small>kg</small>';
-  if (!simRunning) draw();
+  if (!sim.running) { draw(physics()); updatePanel(physics()); }
 });
 
 document.getElementById('surface').addEventListener('change', function() {
   state.surfaceMu = parseFloat(this.value);
-  if (!simRunning) draw();
+  if (!sim.running) { draw(physics()); updatePanel(physics()); }
 });
 
-document.querySelectorAll('.compound-btn').forEach(btn => {
+document.querySelectorAll('.cbtn').forEach(btn => {
   btn.addEventListener('click', function() {
-    document.querySelectorAll('.compound-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cbtn').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
-    state.tireMu = parseFloat(this.dataset.mu);
-    state.tireName = this.dataset.name;
-    if (!simRunning) draw();
+    state.compound = this.dataset.name;
+    if (!sim.running) { draw(physics()); updatePanel(physics()); }
   });
 });
 
-document.getElementById('runBtn').addEventListener('click', function() {
-  if (simRunning) {
-    cancelAnimationFrame(animFrame);
-    simRunning = false;
-    slipping = false;
-    slipProgress = 0;
-    document.getElementById('slipBanner').classList.remove('show');
-    this.textContent = '▶ RUN SIMULATION';
-    draw();
-  } else {
-    simRunning = true;
-    slipProgress = 0;
-    this.textContent = '■ STOP SIMULATION';
-    animateSlip();
-  }
-});
-
-// Initial draw
-draw();
+// Init
+draw(physics());
+updatePanel(physics());
 </script>
 </body>
-</html> 
+</html>
