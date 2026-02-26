@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Science Brake and Grip Simulation!</title>
+<title>GRIP 3D</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -199,22 +199,18 @@ select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde
         <div class="pt">Live Data</div>
         <div class="dr"><div class="dl">Angle</div><div class="dv" id="d-ang">—</div></div>
         <div class="dr"><div class="dl">Speed</div><div class="dv" id="d-vel">—</div></div>
-        <div class="dr"><div class="dl">Acceleration</div><div class="dv" id="d-acc">—</div></div>
-        <div class="dr"><div class="dl">Distance</div><div class="dv" id="d-dst">—</div></div>
-        <div class="dr"><div class="dl">F↓ Down-Slope</div><div class="dv" id="d-fd">—</div></div>
-        <div class="dr"><div class="dl">F Static / Kinetic</div><div class="dv" id="d-ff">—</div></div>
-        <div class="dr"><div class="dl">Slip Threshold</div><div class="dv" id="d-thr">—</div></div>
-        <div class="dr"><div class="dl">Groove Mult</div><div class="dv" id="d-gm">—</div></div>
+        <div class="dr"><div class="dl">Sliding Distance</div><div class="dv" id="d-dst">—</div></div>
         <div class="dr"><div class="dl">Status</div><div class="dv" id="d-st">—</div></div>
-        <div style="margin-top:8px;"><span class="cl">Grip Margin</span>
+        <div style="margin-top:8px;"><span class="cl">How Close to Slipping</span>
           <div class="bt"><div class="bf" id="grip-bar" style="width:100%;background:#30ff80"></div></div>
         </div>
-        <div style="margin-top:10px;padding:8px;background:rgba(6,6,14,.8);border:1px solid #1a1a30;border-radius:2px;font-size:.52rem;color:#44446a;line-height:1.9;">
-          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:3px;">PHYSICS</div>
-          Slip: mg·sin(θ) > μ·gm·mg·cos(θ)<br>
-          Once sliding: a=(F↓−Fk)/m<br>
-          v+=a·dt — friction can stop car<br>
-          <span style="color:#f0c040">Ice: grooves hurt — slick best</span>
+        <div style="margin-top:10px;padding:8px;background:rgba(6,6,14,.8);border:1px solid #1a1a30;border-radius:2px;font-size:.55rem;color:#44446a;line-height:2;">
+          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:4px;">HOW IT WORKS</div>
+          The steeper the hill, the more the car<br>
+          wants to slide. Friction holds it in place.<br>
+          When gravity wins → the car slides.<br>
+          Once sliding, it's hard to stop.<br>
+          <span style="color:#f0c040">On ice: smooth tyres grip best —<br>grooves have nothing to dig into.</span>
         </div>
       </div>
     </div>
@@ -285,31 +281,29 @@ select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde
           <div class="speed-track"><div class="speed-fill" id="b-spd-bar" style="width:0%"></div></div>
         </div>
 
-        <div class="dr"><div class="dl">Deceleration</div><div class="dv" id="b-decel">—</div></div>
-        <div class="dr"><div class="dl">Braking Force</div><div class="dv" id="b-fbrk">—</div></div>
-        <div class="dr"><div class="dl">Effective μ</div><div class="dv" id="b-mu">—</div></div>
-        <div class="dr"><div class="dl">Groove Mult</div><div class="dv" id="b-gm">—</div></div>
+        <div class="dr"><div class="dl">Slowing Down At</div><div class="dv" id="b-decel">—</div></div>
+        <div class="dr"><div class="dl">Distance Travelled</div><div class="dv" id="b-dst">—</div></div>
 
         <div class="result-box" id="b-result-box" style="display:none;">
-          <div class="result-title">STOPPED — TOTAL DISTANCE</div>
+          <div class="result-title">STOPPED — TOTAL STOPPING DISTANCE</div>
           <div class="result-big" id="b-result-dist">—</div>
           <div class="result-unit">metres</div>
-          <div style="margin-top:8px;font-size:.55rem;color:#44446a;line-height:1.8;" id="b-result-detail"></div>
+          <div style="margin-top:8px;font-size:.56rem;color:#44446a;line-height:1.9;" id="b-result-detail"></div>
         </div>
 
-        <div style="margin-top:12px;padding:10px;background:rgba(6,6,14,.85);border:1px solid #1a1a30;border-radius:2px;font-size:.52rem;color:#44446a;line-height:1.9;">
-          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:3px;">BRAKE PHYSICS</div>
-          F_brake = μ_k × μ_surf × gm × mg<br>
-          Decel = F_brake / mass<br>
-          s = v²/2a (ideal stopping dist)<br>
-          <span style="color:#f0c040">Slick tyres best on ice —<br>grooves need texture to work</span>
+        <div style="margin-top:12px;padding:10px;background:rgba(6,6,14,.85);border:1px solid #1a1a30;border-radius:2px;font-size:.55rem;color:#44446a;line-height:2;">
+          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:4px;">HOW IT WORKS</div>
+          The faster you go, the longer it takes<br>
+          to stop. Better grip = shorter stop.<br>
+          Heavier car = harder to slow down.<br>
+          <span style="color:#f0c040">On ice: slick tyres stop shorter —<br>grooves can't grip solid ice.</span>
         </div>
       </div>
     </div>
   </div>
 
   <div id="ft">
-    <span>μ_static > μ_kinetic — slip is self-reinforcing · ice: slick &gt; grooved</span>
+    <span>More grip = shorter stopping distance · On ice, smooth tyres work best</span>
     <span>grip 3d ∞</span>
   </div>
 </div>
@@ -611,6 +605,156 @@ function applyTilt(){
 }
 applyTilt();
 
+// ══════════════════════════════════════════════
+// FLAT ROAD FOR BRAKE TAB
+// Separate group, always rotation.x = 0 (flat)
+// ══════════════════════════════════════════════
+const brakeGroup = new THREE.Group();
+brakeGroup.visible = false;
+scene.add(brakeGroup);
+
+// Flat road tiles
+const bRoadMat = new THREE.MeshStandardMaterial({color:0x1a1a22,roughness:.92,metalness:.04});
+const bTiles = [];
+function makeBrakeTile(zStart){
+  const g=new THREE.Group();
+  const road=new THREE.Mesh(new THREE.BoxGeometry(5.5,.2,TILE_L),bRoadMat);
+  road.position.y=-.1;road.receiveShadow=true;g.add(road);
+  // Kerbs
+  const KSEG=5;
+  for(let i=0;i<KSEG;i++){
+    const mat=i%2===0?curbWMat:curbRMat;
+    const kl=TILE_L/KSEG-.06;
+    const kz=-TILE_L/2+i*(TILE_L/KSEG)+kl/2+.03;
+    [-5.5/2+.18,5.5/2-.18].forEach(kx=>{
+      const k=new THREE.Mesh(new THREE.BoxGeometry(.35,.3,kl),mat);
+      k.position.set(kx,.05,kz);g.add(k);
+    });
+  }
+  // Centre dashes
+  for(let d=0;d<7;d++){
+    const dz=-TILE_L/2+d*(TILE_L/7)+(TILE_L/7)*.4;
+    const dash=new THREE.Mesh(new THREE.BoxGeometry(.08,.005,TILE_L/7*.55),dashMat);
+    dash.position.set(0,.003,dz);g.add(dash);
+  }
+  g.position.z=zStart;brakeGroup.add(g);return g;
+}
+for(let i=0;i<TILE_N;i++) bTiles.push(makeBrakeTile(-i*TILE_L));
+
+// Flat bank
+const bBankTiles=[];
+function makeBrakeBank(zStart){
+  const g=new THREE.Group();
+  [-5.5/2-2,5.5/2+2].forEach(bx=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(4,.15,TILE_L),bankMat);
+    b.position.set(bx,-.04,0);b.receiveShadow=true;g.add(b);
+  });
+  g.position.z=zStart;brakeGroup.add(g);return g;
+}
+for(let i=0;i<TILE_N;i++) bBankTiles.push(makeBrakeBank(-i*TILE_L));
+
+// Flat trees
+const bTrees=[];
+function randBX(){const s=Math.random()<.5?-1:1;return s*(5.5/2+1.2+Math.random()*5.5);}
+for(let i=0;i<40;i++){
+  const g=new THREE.Group();
+  const h=2+Math.random()*2.5;
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.08,.14,h*.4,6),
+    new THREE.MeshStandardMaterial({color:0x3a1e08,roughness:1}));
+  trunk.position.y=h*.2;g.add(trunk);
+  const gCol=new THREE.Color(0x0d3d10).lerp(new THREE.Color(0x1a6620),Math.random());
+  const tMat2=new THREE.MeshStandardMaterial({color:gCol,roughness:.9});
+  for(let l=0;l<3;l++){
+    const r=(.6-l*.12)*(.85+Math.random()*.3);
+    const lh=.85+Math.random()*.35;
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(r,lh,7),tMat2);
+    cone.position.y=h*.38+l*(lh*.5)+lh*.5;g.add(cone);
+  }
+  g.position.set(randBX(),0,-Math.random()*TILE_L*TILE_N);
+  g.rotation.y=Math.random()*Math.PI*2;g.scale.setScalar(.85+Math.random()*.35);
+  brakeGroup.add(g);bTrees.push(g);
+}
+
+// Brake car (separate from slope car)
+const BCAR = new THREE.Group();
+BCAR.position.set(0, WHEEL_R, -6);
+brakeGroup.add(BCAR);
+
+const bBodyMat=new THREE.MeshStandardMaterial({color:0x203060,roughness:.3,metalness:.75});
+const bBody=new THREE.Mesh(new THREE.BoxGeometry(1.6,.52,2.9),bBodyMat);
+bBody.position.y=.26;bBody.castShadow=true;BCAR.add(bBody);
+const bCabin=new THREE.Mesh(new THREE.BoxGeometry(1.28,.4,1.5),
+  new THREE.MeshStandardMaterial({color:0x283278,roughness:.25,metalness:.6}));
+bCabin.position.set(0,.72+.2,-.1);bCabin.castShadow=true;BCAR.add(bCabin);
+const bGlassMat=new THREE.MeshStandardMaterial({color:0xaaccff,roughness:0,transparent:true,opacity:.38});
+const bWind=new THREE.Mesh(new THREE.BoxGeometry(1.26,.38,.05),bGlassMat);
+bWind.position.set(0,.72+.19,.62);BCAR.add(bWind);
+// Headlights & taillights
+[-0.5,0.5].forEach(x=>{
+  const hl=new THREE.Mesh(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:2.5}));
+  hl.position.set(x,.26,1.46);BCAR.add(hl);
+  const tl=new THREE.Mesh(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff1100,emissiveIntensity:2}));
+  tl.position.set(x,.26,-1.46);BCAR.add(tl);
+});
+// Grille
+const bGrille=new THREE.Mesh(new THREE.BoxGeometry(1,.22,.06),
+  new THREE.MeshStandardMaterial({color:0x111122,roughness:.5,metalness:.9}));
+bGrille.position.set(0,.26,1.47);BCAR.add(bGrille);
+// Skirt
+const bSkirt=new THREE.Mesh(new THREE.BoxGeometry(1.65,.1,2.95),
+  new THREE.MeshStandardMaterial({color:0x0d0d1a,roughness:.6,metalness:.5}));
+bSkirt.position.y=.05;BCAR.add(bSkirt);
+
+// Brake lights (red when braking)
+const brakeLightMat = new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:0});
+[-0.5,0.5].forEach(x=>{
+  const bl=new THREE.Mesh(new THREE.BoxGeometry(.28,.12,.04),brakeLightMat);
+  bl.position.set(x,.26,-1.48);BCAR.add(bl);
+});
+
+// Brake wheels
+const bWheels=[];
+WPOS.forEach(p=>{
+  const wg=new THREE.Group();
+  const tyreMat2=new THREE.MeshStandardMaterial({color:CDATA[BST.compound].hexCol,roughness:.86,metalness:.04});
+  const tyre2=new THREE.Mesh(new THREE.TorusGeometry(.3,.118,20,40),tyreMat2);
+  tyre2.rotation.y=Math.PI/2;tyre2.castShadow=true;wg.add(tyre2);
+  wg.userData.tyreMat=tyreMat2;
+  buildGrooveRings(wg,BST.groove);
+  const rim2=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.1,24),
+    new THREE.MeshStandardMaterial({color:0x667788,roughness:.2,metalness:.9}));
+  rim2.rotation.z=Math.PI/2;wg.add(rim2);
+  for(let i=0;i<5;i++){
+    const sg=new THREE.Group();
+    const spk=new THREE.Mesh(new THREE.BoxGeometry(.036,.2,.04),
+      new THREE.MeshStandardMaterial({color:0x778899,metalness:.9,roughness:.2}));
+    spk.rotation.x=(i/5)*Math.PI*2;sg.add(spk);sg.rotation.z=Math.PI/2;wg.add(sg);
+  }
+  const hub2=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.12,12),
+    new THREE.MeshStandardMaterial({color:0x99aabb,metalness:1,roughness:.08}));
+  hub2.rotation.z=Math.PI/2;wg.add(hub2);
+  wg.userData.rebuild=()=>buildGrooveRings(wg,BST.groove);
+  wg.position.set(p.x,0,p.z);
+  BCAR.add(wg);bWheels.push(wg);
+});
+
+let bWheelAng=0;
+
+// Tab visibility toggle
+let activeTab='slope';
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',function(){
+    activeTab=this.dataset.tab;
+    slopeGroup.visible=(activeTab==='slope');
+    brakeGroup.visible=(activeTab==='brake');
+  });
+});
+// init
+slopeGroup.visible=true;
+brakeGroup.visible=false;
+
 // ── CAMERA ORBIT ──
 let oTheta=.15,oPhi=.44,oR=10;
 const camTarget=new THREE.Vector3();
@@ -738,9 +882,41 @@ function animate(ts){
 
   tickSmoke(dt);
 
-  const carWorld=new THREE.Vector3();
-  car.getWorldPosition(carWorld);
-  camTarget.lerp(carWorld.add(new THREE.Vector3(0,.8,0)),.07);
+  // ── Brake tab 3D animation ──
+  if(activeTab==='brake'){
+    const bspeed = BSIM.vel * SCROLL * 1.2;
+    bTiles.forEach(t=>{
+      t.position.z -= bspeed * dt;
+      if(t.position.z < BCAR.position.z - TILE_L*(TILE_N-.5)) t.position.z += TILE_N*TILE_L;
+    });
+    bBankTiles.forEach(t=>{
+      t.position.z -= bspeed * dt;
+      if(t.position.z < BCAR.position.z - TILE_L*(TILE_N-.5)) t.position.z += TILE_N*TILE_L;
+    });
+    bTrees.forEach(t=>{
+      t.position.z -= bspeed * dt;
+      if(t.position.z < BCAR.position.z - TILE_L*(TILE_N-1)){
+        t.position.z += TILE_N*TILE_L + Math.random()*TILE_L;
+        t.position.x = randBX();
+      }
+    });
+    // Wheel spin — lock up (stop spinning) when braking hard
+    const lockup = BSIM.braking && calcBrakePhysics().decel > 4;
+    if(!lockup) bWheelAng += BSIM.vel * 2.8 * dt;
+    bWheels.forEach(w=>{ w.rotation.x = bWheelAng; });
+    // Brake lights
+    brakeLightMat.emissiveIntensity = BSIM.braking ? 3 : 0;
+    bBodyMat.color.setHex(BSIM.braking ? 0x280808 : 0x203060);
+    // Camera follows brake car
+    const bcWorld = new THREE.Vector3();
+    BCAR.getWorldPosition(bcWorld);
+    camTarget.lerp(bcWorld.add(new THREE.Vector3(0,.8,0)), .07);
+  } else {
+    const carWorld=new THREE.Vector3();
+    car.getWorldPosition(carWorld);
+    camTarget.lerp(carWorld.add(new THREE.Vector3(0,.8,0)),.07);
+  }
+
   updateCamera();
   updateSlopePanel(p);
   renderer.render(scene,camera);
@@ -762,7 +938,8 @@ function startBrakeLoop(){
     lastT=ts;
     const bp=calcBrakePhysics();
     BSIM.vel=Math.max(0,BSIM.vel-bp.decel*dt);
-    BSIM.dist+=BSIM.vel*dt; // dist while still moving
+    BSIM.dist+=BSIM.vel*dt;
+    document.getElementById('b-dst').textContent=BSIM.dist.toFixed(1)+' m';
     updateBrakePanel(bp);
     if(BSIM.vel<=0){
       BSIM.vel=0;BSIM.braking=false;BSIM.done=true;
@@ -781,12 +958,12 @@ function showBrakeResult(bp){
   const el=document.getElementById('b-result-dist');
   el.textContent=dist;
   el.className='result-big'+(BSIM.dist>50?' bad':BSIM.dist>20?' warn':'');
+  const surfName=document.getElementById('b-surf').options[document.getElementById('b-surf').selectedIndex].text;
   document.getElementById('b-result-detail').innerHTML=
-    `Initial: ${BST.speedKph} km/h (${(BST.speedKph/3.6).toFixed(1)} m/s)<br>`+
-    `Deceleration: ${bp.decel.toFixed(2)} m/s²<br>`+
-    `Effective μ: ${bp.muEff.toFixed(3)}<br>`+
-    `Surface: ${document.getElementById('b-surf').options[document.getElementById('b-surf').selectedIndex].text}<br>`+
-    `Compound: ${BST.compound} · Groove: ${GDATA[BST.groove].note.split(':')[0]}`;
+    `Started at: <b style="color:#dde0f5">${BST.speedKph} km/h</b><br>`+
+    `Surface: <b style="color:#dde0f5">${surfName}</b><br>`+
+    `Tyre: <b style="color:#dde0f5">${BST.compound} · ${GDATA[BST.groove].note.split(':')[0]}</b><br>`+
+    `Slowing rate: <b style="color:#dde0f5">${bp.decel.toFixed(1)} m/s² </b>`;
 }
 
 function updateBrakePanel(bp){
@@ -797,10 +974,7 @@ function updateBrakePanel(bp){
   const pct=BSIM.braking||BSIM.vel>0?kph/BST.speedKph*100:0;
   document.getElementById('b-spd-bar').style.width=pct+'%';
   document.getElementById('b-spd-bar').style.background=pct>60?'#ff3030':pct>30?'#f0c040':'#30ff80';
-  setDv('b-decel',bp.decel.toFixed(2)+' m/s²');
-  setDv('b-fbrk',(bp.fBrake/1000).toFixed(2)+' kN');
-  setDv('b-mu',bp.muEff.toFixed(3));
-  setDv('b-gm',(bp.gm*100).toFixed(0)+'%',bp.gm>=1?'g':bp.gm>=.8?'w':'b');
+  setDv('b-decel',bp.decel.toFixed(2)+' m/s²',bp.decel<3?'b':bp.decel<6?'w':'g');
 }
 
 // ══════════════════════════════════════════════
@@ -900,12 +1074,14 @@ document.getElementById('b-surf').addEventListener('change',function(){
 document.querySelectorAll('[data-bc]').forEach(btn=>btn.addEventListener('click',function(){
   document.querySelectorAll('[data-bc]').forEach(b=>b.classList.remove('ca'));
   this.classList.add('ca');BST.compound=this.dataset.bc;
+  bWheels.forEach(w=>{if(w.userData.tyreMat)w.userData.tyreMat.color.setHex(CDATA[BST.compound].hexCol);});
   document.getElementById('b-cnote').textContent=CDATA[BST.compound].note;
   updateBrakePanel(calcBrakePhysics());
 }));
 document.querySelectorAll('[data-bg]').forEach(btn=>btn.addEventListener('click',function(){
   document.querySelectorAll('[data-bg]').forEach(b=>b.classList.remove('ga'));
   this.classList.add('ga');BST.groove=parseInt(this.dataset.bg);
+  bWheels.forEach(w=>{if(w.userData.rebuild)w.userData.rebuild();});
   refreshBGnote();updateBrakePanel(calcBrakePhysics());
 }));
 
@@ -921,14 +1097,20 @@ document.getElementById('btn-brake').addEventListener('click',function(){
 document.getElementById('btn-brake-rst').addEventListener('click',function(){
   BSIM.braking=false;BSIM.vel=BST.speedKph/3.6;BSIM.dist=0;BSIM.done=false;
   brakeRaf=null;
+  brakeLightMat.emissiveIntensity=0;
+  bBodyMat.color.setHex(0x203060);
+  // Reset tile positions
+  bTiles.forEach((t,i)=>{t.position.z=-i*TILE_L+BCAR.position.z;});
+  bBankTiles.forEach((t,i)=>{t.position.z=-i*TILE_L+BCAR.position.z;});
   const bb=document.getElementById('btn-brake');
   bb.textContent='🛑 BRAKE';bb.classList.remove('braking');bb.disabled=false;
   document.getElementById('b-result-box').style.display='none';
+  document.getElementById('b-dst').textContent='0 m';
   updateBrakePanel(calcBrakePhysics());
 });
 
 // ══════════════════════════════════════════════
-// TAB SWITCHING
+// TAB SWITCHING (HTML panels)
 // ══════════════════════════════════════════════
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.addEventListener('click',function(){
