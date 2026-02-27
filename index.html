@@ -125,6 +125,35 @@ select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde
   font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#ff3030;letter-spacing:4px;
   text-shadow:0 0 20px #ff303066;opacity:0;z-index:30;pointer-events:none;}
 #spd.on{opacity:1;}
+/* ── Crash tab ── */
+#crash-wrap{flex:1;display:flex;align-items:stretch;}
+#crash-left{width:260px;padding:14px 16px;background:linear-gradient(to right,rgba(6,6,14,.98) 75%,transparent);overflow-y:auto;pointer-events:auto;scrollbar-width:thin;}
+#crash-right{width:300px;margin-left:auto;padding:14px 16px;background:linear-gradient(to left,rgba(6,6,14,.98) 75%,transparent);pointer-events:auto;overflow-y:auto;}
+
+.crash-btn{width:100%;margin-top:12px;padding:14px;background:#ff3030;color:#fff;border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:5px;
+  cursor:pointer;border-radius:4px;pointer-events:auto;transition:all .15s;
+  box-shadow:0 0 25px #ff303055;}
+.crash-btn:hover{background:#ff5050;box-shadow:0 0 40px #ff303088;}
+.crash-btn:disabled{background:#2a1010;color:#551010;box-shadow:none;cursor:default;}
+
+.survival-display{margin-top:14px;text-align:center;padding:16px;
+  background:rgba(6,6,14,.9);border:2px solid #1e1e36;border-radius:6px;}
+.survival-pct{font-family:'Bebas Neue',sans-serif;font-size:5rem;line-height:1;letter-spacing:2px;}
+.survival-label{font-size:.6rem;color:#44446a;letter-spacing:3px;text-transform:uppercase;margin-top:4px;}
+.survival-bar-wrap{margin-top:10px;}
+.survival-bar-track{height:8px;background:#1e1e36;border-radius:4px;overflow:hidden;}
+.survival-bar-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(.2,.8,.2,1);}
+
+.injury-list{margin-top:12px;font-size:.58rem;line-height:2.1;color:#44446a;}
+.injury-list span{display:block;padding:2px 0;border-bottom:1px solid #0e0e1a;}
+.injury-list span b{float:right;}
+
+.rst-crash{width:100%;margin-top:6px;padding:7px;background:transparent;color:#44446a;
+  border:1px solid #1e1e36;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;
+  cursor:pointer;border-radius:2px;pointer-events:auto;transition:all .12s;}
+.rst-crash:hover{color:#dde0f5;border-color:#44446a;}
+
 #hint{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
   font-size:.52rem;color:#22223a;letter-spacing:2px;z-index:20;pointer-events:none;}
 </style>
@@ -142,6 +171,7 @@ select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde
     <h1>GRIP</h1>
     <div class="tab active" data-tab="slope">⛰ SLOPE SIM</div>
     <div class="tab" data-tab="brake">🛑 BRAKE TEST</div>
+    <div class="tab" data-tab="crash">💥 CRASH SIM</div>
   </div>
 
   <!-- ═══ SLOPE TAB ═══ -->
@@ -297,6 +327,77 @@ select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde
           to stop. Better grip = shorter stop.<br>
           Heavier car = harder to slow down.<br>
           <span style="color:#f0c040">On ice: slick tyres stop shorter —<br>grooves can't grip solid ice.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CRASH TAB ═══ -->
+  <div class="tabpanel" id="tab-crash">
+    <div id="crash-wrap">
+      <div id="crash-left">
+        <div class="pt">Crash Setup</div>
+        <div class="ctrl">
+          <span class="cl">Impact Speed</span>
+          <input type="range" id="cr-speed" min="5" max="200" value="60" step="1">
+          <div class="big-speed" id="crv-speed">60 <small>km/h</small></div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">You Are</span>
+          <div class="g2">
+            <button class="xb ca" data-occ="driver">Driver</button>
+            <button class="xb" data-occ="passenger">Passenger</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Seatbelt?</span>
+          <div class="g2">
+            <button class="xb ca" data-belt="yes">✓ Buckled</button>
+            <button class="xb" data-belt="no">✗ No Belt</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Crash Type</span>
+          <select id="cr-type">
+            <option value="frontal">Head-On (Frontal)</option>
+            <option value="rear">Rear-End</option>
+            <option value="side">Side Impact (T-Bone)</option>
+            <option value="rollover">Rollover</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Airbags?</span>
+          <div class="g2">
+            <button class="xb ca" data-airbag="yes">✓ Airbags</button>
+            <button class="xb" data-airbag="no">✗ None</button>
+          </div>
+        </div>
+        <button class="crash-btn" id="btn-crash">💥 CRASH</button>
+        <button class="rst-crash" id="btn-crash-rst">↺ RESET</button>
+      </div>
+
+      <div id="crash-right">
+        <div class="pt">Outcome</div>
+
+        <div class="survival-display" id="surv-display">
+          <div class="survival-pct" id="surv-pct" style="color:#30ff80">—</div>
+          <div class="survival-label">Chance of Survival</div>
+          <div class="survival-bar-wrap">
+            <span class="cl" style="margin-bottom:4px;">Survival Likelihood</span>
+            <div class="survival-bar-track">
+              <div class="survival-bar-fill" id="surv-bar" style="width:0%;background:#30ff80"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="injury-list" id="injury-list" style="display:none;"></div>
+
+        <div style="margin-top:12px;padding:10px;background:rgba(6,6,14,.85);border:1px solid #1a1a30;border-radius:2px;font-size:.55rem;color:#44446a;line-height:2;">
+          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:4px;">HOW IT WORKS</div>
+          Higher speed = way more force on your body.<br>
+          Seatbelt spreads that force over your chest.<br>
+          No seatbelt = you hit the windshield.<br>
+          <span style="color:#f0c040">At 60 km/h you hit as hard as<br>falling from a 3-storey building.</span>
         </div>
       </div>
     </div>
@@ -749,11 +850,17 @@ document.querySelectorAll('.tab').forEach(tab=>{
     activeTab=this.dataset.tab;
     slopeGroup.visible=(activeTab==='slope');
     brakeGroup.visible=(activeTab==='brake');
+    crashGroup.visible=(activeTab==='crash');
+    if(activeTab==='crash'){
+      // Set camera back for crash view
+      oTheta=0.1;oPhi=0.35;oR=14;
+    }
   });
 });
 // init
 slopeGroup.visible=true;
 brakeGroup.visible=false;
+// crashGroup visibility set after it's created
 
 // ── CAMERA ORBIT ──
 let oTheta=.15,oPhi=.44,oR=10;
@@ -911,6 +1018,8 @@ function animate(ts){
     const bcWorld = new THREE.Vector3();
     BCAR.getWorldPosition(bcWorld);
     camTarget.lerp(bcWorld.add(new THREE.Vector3(0,.8,0)), .07);
+  } else if(activeTab==='crash'){
+    tickCrash(dt);
   } else {
     const carWorld=new THREE.Vector3();
     car.getWorldPosition(carWorld);
@@ -1126,6 +1235,497 @@ refreshGnote();
 refreshBGnote();
 BSIM.vel=BST.speedKph/3.6;
 updateBrakePanel(calcBrakePhysics());
+
+
+// ══════════════════════════════════════════════
+// CRASH TAB — 3D SCENE
+// ══════════════════════════════════════════════
+const crashGroup = new THREE.Group();
+crashGroup.visible = false;
+scene.add(crashGroup);
+
+// Static road for crash scene
+const crRoad = new THREE.Mesh(
+  new THREE.BoxGeometry(8, 0.2, 40),
+  new THREE.MeshStandardMaterial({color:0x1a1a22,roughness:.92})
+);
+crRoad.position.y = -0.1;
+crRoad.receiveShadow = true;
+crashGroup.add(crRoad);
+
+// Wall / barrier to crash into
+const wallMat = new THREE.MeshStandardMaterial({color:0x888888,roughness:.6,metalness:.4});
+const wall = new THREE.Mesh(new THREE.BoxGeometry(7, 3, 0.4), wallMat);
+wall.position.set(0, 1.5, -12);
+wall.castShadow = true;
+crashGroup.add(wall);
+// Stripes on wall
+for(let i=-3;i<=3;i++){
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.4,3,0.05),
+    new THREE.MeshStandardMaterial({color:i%2===0?0xffdd00:0x111111}));
+  stripe.position.set(i*1.0,0,0.23);
+  wall.add(stripe);
+}
+
+// ── CRASH CAR ──
+const crashCar = new THREE.Group();
+crashCar.position.set(0, WHEEL_R, 6);
+crashGroup.add(crashCar);
+
+// Car body parts — stored separately so they can fly off
+const crParts = [];
+
+function makeCrashCarPart(geo, mat, px, py, pz){
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(px, py, pz);
+  m.castShadow = true;
+  crashCar.add(m);
+  crParts.push({
+    mesh: m,
+    origPos: new THREE.Vector3(px,py,pz),
+    origRot: new THREE.Euler(0,0,0),
+    vel: new THREE.Vector3(),
+    angVel: new THREE.Vector3(),
+    flying: false,
+    detached: false
+  });
+  return m;
+}
+
+const crBodyMat = new THREE.MeshStandardMaterial({color:0x2244aa,roughness:.3,metalness:.75});
+const crBody = makeCrashCarPart(new THREE.BoxGeometry(1.6,.52,2.9), crBodyMat, 0,.26,0);
+
+// Hood (front panel — first to deform)
+const crHoodMat = new THREE.MeshStandardMaterial({color:0x2244aa,roughness:.3,metalness:.75});
+const crHood = makeCrashCarPart(new THREE.BoxGeometry(1.55,.08,1.1), crHoodMat, 0,.52,.9);
+
+// Cabin
+const crCabinMat = new THREE.MeshStandardMaterial({color:0x2a3a7a,roughness:.25,metalness:.6});
+makeCrashCarPart(new THREE.BoxGeometry(1.28,.4,1.5), crCabinMat, 0,.92,-.1);
+
+// Windshield
+const crGlass = makeCrashCarPart(
+  new THREE.BoxGeometry(1.26,.38,.05),
+  new THREE.MeshStandardMaterial({color:0xaaccff,roughness:0,transparent:true,opacity:.38}),
+  0,.92,.62
+);
+
+// Left/right doors
+makeCrashCarPart(new THREE.BoxGeometry(.06,.45,2.2),
+  new THREE.MeshStandardMaterial({color:0x1e3080,roughness:.3,metalness:.7}), -0.83,.52,0);
+makeCrashCarPart(new THREE.BoxGeometry(.06,.45,2.2),
+  new THREE.MeshStandardMaterial({color:0x1e3080,roughness:.3,metalness:.7}), 0.83,.52,0);
+
+// Front bumper
+const crBumper = makeCrashCarPart(
+  new THREE.BoxGeometry(1.65,.22,.12),
+  new THREE.MeshStandardMaterial({color:0x111122,roughness:.5,metalness:.9}),
+  0,.18,1.5
+);
+
+// Headlights
+[-0.5,0.5].forEach(x=>{
+  makeCrashCarPart(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:2.5}),x,.26,1.46);
+  makeCrashCarPart(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff1100,emissiveIntensity:2}),x,.26,-1.46);
+});
+
+// Crash car wheels
+const crWheels=[];
+WPOS.forEach(p=>{
+  const wg=new THREE.Group();
+  const tyre=new THREE.Mesh(new THREE.TorusGeometry(.3,.118,16,32),
+    new THREE.MeshStandardMaterial({color:0x222222,roughness:.86}));
+  tyre.rotation.y=Math.PI/2;wg.add(tyre);
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.09,16),
+    new THREE.MeshStandardMaterial({color:0x556677,roughness:.3,metalness:.85}));
+  rim.rotation.z=Math.PI/2;wg.add(rim);
+  wg.position.set(p.x,0,p.z);
+  crashCar.add(wg);
+  crWheels.push({grp:wg,origPos:new THREE.Vector3(p.x,0,p.z),vel:new THREE.Vector3(),angVel:new THREE.Vector3(),flying:false});
+});
+
+// Debris pieces pool (shards of glass/metal)
+const debrisMeshes=[];
+function spawnDebris(n, cx, cy, cz, speed){
+  for(let i=0;i<n;i++){
+    const sz = 0.04+Math.random()*.14;
+    const geo = Math.random()>.5
+      ? new THREE.BoxGeometry(sz,sz*0.5,sz)
+      : new THREE.TetrahedronGeometry(sz);
+    const col = Math.random()>.6 ? 0x88aacc : (Math.random()>.5?0x555566:0x222233);
+    const m=new THREE.Mesh(geo,
+      new THREE.MeshStandardMaterial({color:col,roughness:1,transparent:true,opacity:.9}));
+    m.position.set(
+      cx+(Math.random()-.5)*.8,
+      cy+Math.random()*.5,
+      cz+(Math.random()-.5)*.8
+    );
+    const spd = speed*(0.4+Math.random()*.8);
+    m.userData.vel=new THREE.Vector3(
+      (Math.random()-.5)*spd*.3,
+      Math.random()*spd*.4+1,
+      -(Math.random()*spd*.5+0.5)
+    );
+    m.userData.angVel=new THREE.Vector3(
+      (Math.random()-.5)*8,(Math.random()-.5)*8,(Math.random()-.5)*8);
+    m.userData.life=1;
+    m.castShadow=true;
+    scene.add(m);
+    debrisMeshes.push(m);
+  }
+}
+
+// Crash fire/smoke particles
+const crashParticles=[];
+function spawnCrashFire(x,y,z,n){
+  for(let i=0;i<n;i++){
+    const m=new THREE.Mesh(
+      new THREE.SphereGeometry(.08+Math.random()*.12,5,5),
+      new THREE.MeshStandardMaterial({
+        color:Math.random()>.5?0xff4400:0xff8800,
+        emissive:Math.random()>.5?0xff3300:0xff6600,
+        emissiveIntensity:2+Math.random()*2,
+        transparent:true,opacity:.8
+      })
+    );
+    m.position.set(x+(Math.random()-.5)*.6,y,z+(Math.random()-.5)*.4);
+    m.userData.vel=new THREE.Vector3((Math.random()-.5)*.08,.05+Math.random()*.12,(Math.random()-.5)*.05);
+    m.userData.life=1;
+    scene.add(m);crashParticles.push(m);
+  }
+}
+
+// ── CRASH STATE ──
+const CRASH={
+  speed:60, belt:'yes', airbag:'yes', type:'frontal', occupant:'driver',
+  state:'idle', // idle | driving | crashed
+  carVel:0, carPos:6, // z position
+  crashT:0, // time since impact
+  parts:crParts,
+};
+
+function resetCrashScene(){
+  CRASH.state='idle';
+  CRASH.carVel=0;
+  CRASH.carPos=6;
+  crashCar.position.set(0,WHEEL_R,6);
+  crashCar.rotation.set(0,0,0);
+
+  // Reset all parts
+  crParts.forEach(p=>{
+    p.mesh.position.copy(p.origPos);
+    p.mesh.rotation.set(0,0,0);
+    p.vel.set(0,0,0);
+    p.flying=false;
+    p.detached=false;
+    if(p.mesh.parent!==crashCar) crashCar.add(p.mesh);
+  });
+  crWheels.forEach(w=>{
+    w.grp.position.copy(w.origPos);
+    w.grp.rotation.set(0,0,0);
+    w.vel.set(0,0,0);
+    w.flying=false;
+    if(w.grp.parent!==crashCar) crashCar.add(w.grp);
+  });
+
+  // Remove debris
+  debrisMeshes.forEach(m=>scene.remove(m));debrisMeshes.length=0;
+  crashParticles.forEach(m=>scene.remove(m));crashParticles.length=0;
+
+  // Reset wall
+  wall.position.set(0,1.5,-12);
+  wall.rotation.set(0,0,0);
+  wall.scale.set(1,1,1);
+
+  // Hide injury list
+  document.getElementById('injury-list').style.display='none';
+
+  // Reset survival display
+  document.getElementById('surv-pct').textContent='—';
+  document.getElementById('surv-bar').style.width='0%';
+  document.getElementById('surv-display').style.borderColor='#1e1e36';
+}
+
+function calcSurvival(speedKph, belt, airbag, type, occupant){
+  // Based on real crash statistics (NHTSA / IIHS data):
+  // Base survival rates by speed bracket
+  let base;
+  if(speedKph<=20) base=99;
+  else if(speedKph<=40) base=97;
+  else if(speedKph<=60) base=85;
+  else if(speedKph<=80) base=65;
+  else if(speedKph<=100) base=40;
+  else if(speedKph<=120) base=20;
+  else if(speedKph<=150) base=8;
+  else base=2;
+
+  // Crash type modifier
+  const typeModifier = {frontal:1.0, rear:1.15, side:0.88, rollover:0.80}[type]||1.0;
+  // Seatbelt: massive effect — no belt is 30x more likely to die in ejection
+  const beltMod = belt==='yes' ? 1.0 : 0.42;
+  // Airbag
+  const airbagMod = airbag==='yes' ? 1.08 : 0.92;
+
+  let pct = base * typeModifier * beltMod * airbagMod;
+  pct = Math.max(1, Math.min(99.5, pct));
+
+  // Injury breakdown (rough)
+  const injuries=[];
+  if(speedKph > 20){
+    injuries.push({label:'Whiplash / Neck Strain', risk: Math.min(95, speedKph*0.8+(belt==='no'?20:0))});
+  }
+  if(speedKph > 40){
+    injuries.push({label:'Broken Ribs / Chest Injury', risk: Math.min(90, (speedKph-30)*0.9+(belt==='no'?30:0)-(airbag==='yes'?10:0))});
+  }
+  if(speedKph > 50 && belt==='no'){
+    injuries.push({label:'Head vs Windshield', risk: Math.min(95, (speedKph-40)*1.2)});
+  }
+  if(speedKph > 60){
+    injuries.push({label:'Broken Arms / Legs', risk: Math.min(85, (speedKph-50)*0.8)});
+  }
+  if(speedKph > 80){
+    injuries.push({label:'Internal Bleeding', risk: Math.min(80, (speedKph-70)*1.1+(belt==='no'?20:0))});
+  }
+  if(speedKph > 100){
+    injuries.push({label:'Brain Injury', risk: Math.min(75, (speedKph-90)*1.0+(belt==='no'?25:0))});
+  }
+  if(type==='rollover'){
+    injuries.push({label:'Ejection from Vehicle', risk: belt==='no'?75:8});
+  }
+  if(type==='side'){
+    injuries.push({label:'Door Intrusion Injury', risk: Math.min(70, (speedKph-20)*0.6)});
+  }
+  return {pct: Math.round(pct*10)/10, injuries};
+}
+
+function showSurvival(speedKph){
+  const s=calcSurvival(speedKph,CRASH.belt,CRASH.airbag,CRASH.type,CRASH.occupant);
+  const el=document.getElementById('surv-pct');
+  const bar=document.getElementById('surv-bar');
+  const disp=document.getElementById('surv-display');
+
+  el.textContent=s.pct+'%';
+  const col=s.pct>70?'#30ff80':s.pct>40?'#f0c040':'#ff3030';
+  el.style.color=col;
+  bar.style.width=s.pct+'%';
+  bar.style.background=col;
+  disp.style.borderColor=col;
+
+  // Injury list
+  const list=document.getElementById('injury-list');
+  if(s.injuries.length){
+    list.style.display='block';
+    list.innerHTML='<div style="color:#f0c040;letter-spacing:2px;font-size:.58rem;margin-bottom:4px;">LIKELY INJURIES</div>'+
+      s.injuries.map(inj=>{
+        const rc=inj.risk>70?'#ff3030':inj.risk>40?'#f0c040':'#888';
+        return `<span>${inj.label} <b style="color:${rc}">${Math.round(inj.risk)}% risk</b></span>`;
+      }).join('');
+  } else {
+    list.innerHTML='<span style="color:#30ff80">Minor or no injuries expected.</span>';
+    list.style.display='block';
+  }
+}
+
+function triggerCrash(speedKph){
+  const speedMs = speedKph/3.6;
+  const impactForce = speedMs; // proportional to speed for effect sizing
+
+  // Detach and launch parts based on speed
+  crParts.forEach((p,i)=>{
+    const launchChance = Math.min(0.95, speedKph/120);
+    if(Math.random() < launchChance || speedKph>100){
+      p.flying=true;
+      // Launch mostly forward/upward
+      p.vel.set(
+        (Math.random()-.5)*impactForce*.25,
+        Math.random()*impactForce*.3+1.5,
+        -(Math.random()*impactForce*.4+impactForce*.1)
+      );
+      p.angVel=new THREE.Vector3(
+        (Math.random()-.5)*8,(Math.random()-.5)*6,(Math.random()-.5)*8);
+      // Move mesh to scene space before detaching
+      const wpos=new THREE.Vector3();p.mesh.getWorldPosition(wpos);
+      const wrot=new THREE.Euler();wrot.setFromQuaternion(p.mesh.getWorldQuaternion(new THREE.Quaternion()));
+      scene.add(p.mesh);
+      p.mesh.position.copy(wpos);
+      p.mesh.rotation.copy(wrot);
+      p.detached=true;
+    }
+  });
+
+  // Wheels fly off at high speed
+  if(speedKph>60){
+    crWheels.forEach(w=>{
+      w.flying=true;
+      const wpos=new THREE.Vector3();w.grp.getWorldPosition(wpos);
+      scene.add(w.grp);w.grp.position.copy(wpos);
+      w.vel.set((Math.random()-.5)*impactForce*.4,Math.random()*impactForce*.25+1,-(Math.random()*impactForce*.2));
+    });
+  }
+
+  // Spawn debris proportional to speed
+  const debrisCount = Math.floor(speedKph/4);
+  const carWPos=new THREE.Vector3();crashCar.getWorldPosition(carWPos);
+  spawnDebris(debrisCount, carWPos.x, carWPos.y+0.5, carWPos.z-1, speedMs*0.4);
+
+  // Fire/smoke at high speed
+  if(speedKph>60) spawnCrashFire(carWPos.x, carWPos.y+0.3, carWPos.z+0.5, Math.floor(speedKph/10));
+
+  showSurvival(speedKph);
+}
+
+// ── Tab visibility for crash ──
+// (integrated into the existing tab click handler)
+
+// ── CRASH ANIMATE ──
+let crAnimating=false;
+
+function tickCrash(dt){
+  if(CRASH.state==='driving'){
+    // Approach wall
+    CRASH.carVel = CRASH.speed/3.6;
+    CRASH.carPos -= CRASH.carVel * dt;
+    crashCar.position.z = CRASH.carPos;
+
+    if(CRASH.carPos <= -11.5){
+      // IMPACT
+      CRASH.state='crashed';
+      CRASH.crashT=0;
+      triggerCrash(CRASH.speed);
+      // Crumple car body
+      crashCar.position.z=-11.5;
+    }
+  }
+
+  if(CRASH.state==='crashed'){
+    CRASH.crashT+=dt;
+    const t=CRASH.crashT;
+
+    // Shake the car body at impact
+    if(t<0.3){
+      const shake=(0.3-t)*CRASH.speed*.004;
+      crashCar.position.x=Math.sin(t*80)*shake;
+      crashCar.position.y=WHEEL_R+Math.abs(Math.sin(t*60))*shake*.5;
+    }
+
+    // Crumple animation on main body
+    if(t<0.5){
+      const crumple=Math.min(1,t*3)*Math.min(1,CRASH.speed/60);
+      crBody.scale.z=1-crumple*0.35;
+      crHood.position.y=0.52+crumple*0.15;
+      crHood.rotation.x=crumple*0.4;
+    }
+  }
+
+  // Update flying parts
+  crParts.forEach(p=>{
+    if(!p.detached||!p.flying) return;
+    p.mesh.position.x+=p.vel.x*dt;
+    p.mesh.position.y+=p.vel.y*dt;
+    p.mesh.position.z+=p.vel.z*dt;
+    p.vel.y-=9.81*dt; // gravity
+    p.vel.multiplyScalar(0.98); // air drag
+    p.mesh.rotation.x+=p.angVel.x*dt;
+    p.mesh.rotation.y+=p.angVel.y*dt;
+    p.mesh.rotation.z+=p.angVel.z*dt;
+    // Bounce off ground
+    if(p.mesh.position.y<0.1){p.mesh.position.y=0.1;p.vel.y*=-0.3;p.vel.x*=0.7;p.vel.z*=0.7;p.angVel.multiplyScalar(.5);}
+  });
+
+  crWheels.forEach(w=>{
+    if(!w.flying) return;
+    w.grp.position.x+=w.vel.x*dt;
+    w.grp.position.y+=w.vel.y*dt;
+    w.grp.position.z+=w.vel.z*dt;
+    w.vel.y-=9.81*dt;w.vel.multiplyScalar(0.97);
+    w.grp.rotation.x+=8*dt;
+    if(w.grp.position.y<WHEEL_R){w.grp.position.y=WHEEL_R;w.vel.y*=-0.25;w.vel.multiplyScalar(.7);}
+  });
+
+  // Debris
+  for(let i=debrisMeshes.length-1;i>=0;i--){
+    const d=debrisMeshes[i];
+    d.position.addScaledVector(d.userData.vel,dt*60*dt);
+    d.userData.vel.y-=9.81*dt;
+    d.userData.vel.multiplyScalar(0.97);
+    d.rotation.x+=d.userData.angVel.x*dt;
+    d.rotation.y+=d.userData.angVel.y*dt;
+    d.userData.life-=dt*.3;
+    d.material.opacity=Math.max(0,d.userData.life);
+    if(d.position.y<0.05){d.position.y=0.05;d.userData.vel.y*=-.2;}
+    if(d.userData.life<=0){scene.remove(d);debrisMeshes.splice(i,1);}
+  }
+
+  // Fire/smoke
+  for(let i=crashParticles.length-1;i>=0;i--){
+    const p=crashParticles[i];
+    p.position.addScaledVector(p.userData.vel,dt*60);
+    p.userData.life-=dt*0.8;
+    p.material.opacity=p.userData.life*.8;
+    p.scale.setScalar(1+(1-p.userData.life)*2);
+    if(p.userData.life<=0){scene.remove(p);crashParticles.splice(i,1);}
+  }
+
+  // Camera tracks crash car
+  if(activeTab==='crash'){
+    const ccp=new THREE.Vector3();
+    BCAR.getWorldPosition(ccp); // reuse BCAR helper - actually use crashCar
+    // Manual world pos since crashCar is in crashGroup
+    const ccrash=crashCar.position.clone();
+    crashGroup.localToWorld(ccrash);
+    camTarget.lerp(ccrash.add(new THREE.Vector3(0,1,0)),.06);
+  }
+}
+
+// ── CRASH CONTROLS ──
+document.getElementById('cr-speed').addEventListener('input',function(){
+  CRASH.speed=parseInt(this.value);
+  document.getElementById('crv-speed').innerHTML=CRASH.speed+' <small>km/h</small>';
+});
+document.querySelectorAll('[data-occ]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-occ]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');CRASH.occupant=this.dataset.occ;
+}));
+document.querySelectorAll('[data-belt]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-belt]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');CRASH.belt=this.dataset.belt;
+}));
+document.querySelectorAll('[data-airbag]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-airbag]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');CRASH.airbag=this.dataset.airbag;
+}));
+document.getElementById('cr-type').addEventListener('change',function(){
+  CRASH.type=this.value;
+});
+document.getElementById('btn-crash').addEventListener('click',function(){
+  if(CRASH.state==='idle'){
+    resetCrashScene();
+    CRASH.state='driving';
+    CRASH.carPos=6;
+    this.textContent='💨 INCOMING...';
+    this.disabled=true;
+  }
+});
+document.getElementById('btn-crash-rst').addEventListener('click',function(){
+  resetCrashScene();
+  document.getElementById('btn-crash').textContent='💥 CRASH';
+  document.getElementById('btn-crash').disabled=false;
+  CRASH.state='idle';
+  CRASH.carPos=6;
+  crashCar.position.set(0,WHEEL_R,6);
+  crashCar.rotation.set(0,0,0);
+});
+
+// ── Wire crash into tab visibility ──
+const origTabClick = document.querySelectorAll('.tab');
+// Already handled via activeTab variable set in the brakeGroup section above.
+// Just need to add crash group visibility:
+// We patch the existing tab listener by watching activeTab changes post-hoc in animate.
+
+// Patch animate to handle crash tab visibility
+// (done inline in the animate loop via activeTab check)
 
 } // end boot
 })();
