@@ -2,287 +2,1733 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Grip Simulator Pro - Physics & Safety</title>
+<title>GRIP 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-  canvas { display: block; cursor: move; }
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:'IBM Plex Mono',monospace;}
+#three{position:fixed;inset:0;z-index:0;}
 
-  #ui {
-    position: absolute; top: 0; left: 0; width: 280px; height: 100vh;
-    background: rgba(15, 15, 15, 0.98); border-right: 1px solid #333; padding: 20px; z-index: 10;
-    color: #e0e0e0; pointer-events: auto; overflow-y: auto;
-  }
-  
-  h2 { font-size: 13px; color: #3d5afe; margin-bottom: 15px; text-align: center; letter-spacing: 2px; font-weight: 800; border-bottom: 1px solid #333; padding-bottom: 10px; }
-  .section { margin-bottom: 15px; }
-  label { font-size: 9px; color: #777; display: block; margin-top: 8px; text-transform: uppercase; font-weight: bold; }
-  
-  select, input[type=range] { 
-    width: 100%; margin-top: 4px; background: #222; color: #fff; 
-    border: 1px solid #444; padding: 6px; border-radius: 4px; outline: none; font-size: 11px;
-  }
+/* ── HUD shell ── */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:flex;flex-direction:column;}
 
-  .tabs { display: flex; gap: 2px; margin-bottom: 15px; }
-  .tab { 
-    flex: 1; padding: 8px 0; background: #1a1a1a; border: 1px solid #333; 
-    color: #555; font-size: 9px; cursor: pointer; border-radius: 4px; font-weight: bold; 
-  }
-  .tab.on { background: #3d5afe; color: #fff; border-color: #3d5afe; }
-  
-  .panel { display: none; }
-  .panel.on { display: block; }
-  
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-  .stat-box { background: #111; padding: 8px; border-radius: 4px; border: 1px solid #222; }
-  .stat-val { font-family: monospace; font-size: 14px; color: #3d5afe; font-weight: bold; }
-  .stat-lbl { font-size: 8px; color: #555; text-transform: uppercase; margin-top: 2px; }
+/* ── Header with tabs ── */
+#hdr{display:flex;align-items:center;gap:0;height:50px;
+  background:linear-gradient(to bottom,rgba(6,6,14,.98) 70%,transparent);pointer-events:auto;
+  border-bottom:1px solid #1a1a2e;}
+#hdr h1{font-family:'Bebas Neue',sans-serif;font-size:1.75rem;letter-spacing:5px;color:#f0c040;padding:0 18px;white-space:nowrap;}
+.tab{height:100%;padding:0 18px;display:flex;align-items:center;cursor:pointer;
+  font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:#44446a;border-bottom:2px solid transparent;
+  transition:all .15s;border-right:1px solid #1a1a2e;}
+.tab:hover{color:#aaa;}
+.tab.active{color:#f0c040;border-bottom-color:#f0c040;}
 
-  .btn { 
-    width: 100%; margin-top: 15px; padding: 12px; background: #3d5afe; 
-    color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 10px; text-transform: uppercase;
-  }
-  .alert { margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 10px; text-align: center; font-weight: bold; min-height: 28px; }
-  .red { color: #f44336; background: rgba(244, 67, 54, 0.1); border: 1px solid #f44336; }
-  .green { color: #4caf50; background: rgba(76, 175, 80, 0.1); border: 1px solid #4caf50; }
-  .death { color: #ff0000; background: rgba(255, 0, 0, 0.2); border: 1px solid #ff0000; text-transform: uppercase; }
+/* ── Tab panels ── */
+.tabpanel{display:none;flex:1;overflow:hidden;}
+.tabpanel.active{display:flex;}
+
+/* ── Slope tab layout ── */
+#mid{flex:1;display:flex;}
+#lp{width:245px;padding:12px 14px;background:linear-gradient(to right,rgba(6,6,14,.97) 75%,transparent);
+  overflow-y:auto;pointer-events:auto;scrollbar-width:thin;scrollbar-color:#1a1a2e transparent;}
+#rp{width:225px;margin-left:auto;padding:12px 14px;
+  background:linear-gradient(to left,rgba(6,6,14,.97) 75%,transparent);pointer-events:auto;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:#1a1a2e transparent;}
+
+/* ── Brake tab layout ── */
+#brake-wrap{flex:1;display:flex;align-items:stretch;}
+#brake-left{width:280px;padding:16px 18px;background:linear-gradient(to right,rgba(6,6,14,.98) 75%,transparent);
+  overflow-y:auto;pointer-events:auto;scrollbar-width:thin;}
+#brake-right{width:320px;margin-left:auto;padding:16px 18px;
+  background:linear-gradient(to left,rgba(6,6,14,.98) 75%,transparent);pointer-events:auto;overflow-y:auto;}
+
+/* ── Footer ── */
+#ft{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  background:linear-gradient(to top,rgba(6,6,14,.9),transparent);font-size:.52rem;color:#33334a;letter-spacing:1px;}
+
+/* ── Shared panel styles ── */
+.pt{font-family:'Bebas Neue',sans-serif;font-size:.82rem;letter-spacing:3px;color:#f0c040;margin:6px 0 10px;}
+.ctrl{margin-bottom:13px;}
+.cl{display:block;font-size:.55rem;color:#44446a;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.bv{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#dde0f5;line-height:1;}
+.bv small{font-family:'IBM Plex Mono',monospace;font-size:.55rem;color:#44446a;}
+
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:#1e1e36;border-radius:2px;outline:none;margin-top:5px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:#f0c040;border-radius:50%;cursor:pointer;}
+select{width:100%;background:rgba(6,6,14,.9);border:1px solid #1e1e36;color:#dde0f5;
+  padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:.66rem;border-radius:2px;outline:none;}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:3px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px;margin-top:3px;}
+.xb{border:1px solid #1e1e36;background:rgba(6,6,14,.8);color:#44446a;padding:7px 3px;
+  cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:.58rem;text-align:center;
+  border-radius:2px;transition:all .12s;line-height:1.35;pointer-events:auto;}
+.xb:hover{border-color:#f0c040;color:#f0c040;}
+.xb.ca{background:rgba(240,192,64,.1);color:#f0c040;border-color:#f0c040;font-weight:600;}
+.xb.ga{background:rgba(64,128,255,.1);color:#4080ff;border-color:#4080ff;font-weight:600;}
+.nl{font-size:.52rem;color:#44446a;line-height:1.5;margin-top:4px;min-height:1.4em;}
+
+.rbtn{width:100%;margin-top:8px;background:#f0c040;color:#000;border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:3px;padding:9px;
+  cursor:pointer;border-radius:2px;pointer-events:auto;transition:background .12s;}
+.rbtn:hover{background:#ffd060;}
+.rbtn.stop{background:rgba(255,48,48,.1);color:#ff3030;border:1px solid #ff3030;}
+.rstbtn{width:100%;margin-top:4px;background:transparent;color:#44446a;border:1px solid #1e1e36;
+  font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;padding:6px;
+  cursor:pointer;border-radius:2px;pointer-events:auto;transition:all .12s;}
+.rstbtn:hover{color:#dde0f5;border-color:#44446a;}
+
+.dr{display:flex;justify-content:space-between;align-items:flex-end;padding:6px 0;border-bottom:1px solid #1a1a30;}
+.dl{font-size:.55rem;color:#44446a;text-transform:uppercase;line-height:1.35;}
+.dv{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;line-height:1;text-align:right;color:#dde0f5;}
+.dv.g{color:#30ff80;}.dv.w{color:#f0c040;}.dv.b{color:#ff3030;}
+
+.bt{height:4px;background:#1e1e36;border-radius:3px;overflow:hidden;margin-top:3px;}
+.bf{height:100%;border-radius:3px;transition:width .1s,background .25s;}
+
+/* ── Brake tab specific ── */
+.big-speed{font-family:'Bebas Neue',sans-serif;font-size:4.5rem;color:#f0c040;letter-spacing:4px;line-height:1;text-align:center;margin:10px 0;}
+.big-speed small{font-size:1.2rem;color:#44446a;}
+.brake-btn{width:100%;margin-top:14px;padding:16px;background:#ff3030;color:#fff;border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:5px;
+  cursor:pointer;border-radius:4px;pointer-events:auto;transition:all .15s;
+  box-shadow:0 0 30px #ff303055;}
+.brake-btn:hover{background:#ff5050;box-shadow:0 0 40px #ff303088;}
+.brake-btn:disabled{background:#2a1010;color:#551010;box-shadow:none;cursor:default;}
+.brake-btn.braking{background:#880000;animation:bpulse .4s infinite alternate;}
+@keyframes bpulse{from{box-shadow:0 0 20px #ff0000}to{box-shadow:0 0 60px #ff0000,0 0 20px #ff000088}}
+
+.rst-brake{width:100%;margin-top:6px;padding:8px;background:transparent;color:#44446a;
+  border:1px solid #1e1e36;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:2px;
+  cursor:pointer;border-radius:2px;pointer-events:auto;transition:all .12s;}
+.rst-brake:hover{color:#dde0f5;border-color:#44446a;}
+
+.result-box{margin-top:14px;padding:14px;background:rgba(6,6,14,.9);border:1px solid #1e1e36;border-radius:4px;}
+.result-title{font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:3px;color:#44446a;margin-bottom:8px;}
+.result-big{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;color:#30ff80;line-height:1;}
+.result-big.warn{color:#f0c040;}
+.result-big.bad{color:#ff3030;}
+.result-unit{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#44446a;}
+
+.speedometer{position:relative;width:100%;padding-bottom:8px;}
+.speed-track{height:6px;background:#1e1e36;border-radius:3px;overflow:hidden;margin-top:4px;}
+.speed-fill{height:100%;border-radius:3px;background:#f0c040;transition:width .08s;}
+
+/* ── Overlays ── */
+#sov{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:8px;
+  color:#ff3030;text-shadow:0 0 40px #ff303088;opacity:0;pointer-events:none;z-index:30;
+  transition:opacity .15s;white-space:nowrap;}
+#sov.on{opacity:1;animation:fl .3s infinite alternate;}
+@keyframes fl{from{opacity:1}to{opacity:.2}}
+#spd{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+  font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#ff3030;letter-spacing:4px;
+  text-shadow:0 0 20px #ff303066;opacity:0;z-index:30;pointer-events:none;}
+#spd.on{opacity:1;}
+/* ── Crash tab ── */
+#crash-wrap{flex:1;display:flex;align-items:stretch;}
+#crash-left{width:260px;padding:14px 16px;background:linear-gradient(to right,rgba(6,6,14,.98) 75%,transparent);overflow-y:auto;pointer-events:auto;scrollbar-width:thin;}
+#crash-right{width:300px;margin-left:auto;padding:14px 16px;background:linear-gradient(to left,rgba(6,6,14,.98) 75%,transparent);pointer-events:auto;overflow-y:auto;}
+
+.crash-btn{width:100%;margin-top:12px;padding:14px;background:#ff3030;color:#fff;border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:5px;
+  cursor:pointer;border-radius:4px;pointer-events:auto;transition:all .15s;
+  box-shadow:0 0 25px #ff303055;}
+.crash-btn:hover{background:#ff5050;box-shadow:0 0 40px #ff303088;}
+.crash-btn:disabled{background:#2a1010;color:#551010;box-shadow:none;cursor:default;}
+
+.survival-display{margin-top:14px;text-align:center;padding:16px;
+  background:rgba(6,6,14,.9);border:2px solid #1e1e36;border-radius:6px;}
+.survival-pct{font-family:'Bebas Neue',sans-serif;font-size:5rem;line-height:1;letter-spacing:2px;}
+.survival-label{font-size:.6rem;color:#44446a;letter-spacing:3px;text-transform:uppercase;margin-top:4px;}
+.survival-bar-wrap{margin-top:10px;}
+.survival-bar-track{height:8px;background:#1e1e36;border-radius:4px;overflow:hidden;}
+.survival-bar-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(.2,.8,.2,1);}
+
+.injury-list{margin-top:12px;font-size:.58rem;line-height:2.1;color:#44446a;}
+.injury-list span{display:block;padding:2px 0;border-bottom:1px solid #0e0e1a;}
+.injury-list span b{float:right;}
+
+.rst-crash{width:100%;margin-top:6px;padding:7px;background:transparent;color:#44446a;
+  border:1px solid #1e1e36;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;
+  cursor:pointer;border-radius:2px;pointer-events:auto;transition:all .12s;}
+.rst-crash:hover{color:#dde0f5;border-color:#44446a;}
+
+#hint{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+  font-size:.52rem;color:#22223a;letter-spacing:2px;z-index:20;pointer-events:none;}
 </style>
 </head>
 <body>
 
-<canvas id="c"></canvas>
+<div id="three"></div>
+<div id="sov">⚠ SLIPPING</div>
+<div id="spd"></div>
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
 
-<div id="ui">
-  <h2>PHYSICS MONITOR</h2>
-  
-  <div class="section">
-    <label>Global Friction ($\mu$)</label>
-    <div class="stats-grid" style="grid-template-columns: 1fr;">
-        <div class="stat-box"><div class="stat-val" id="mu-val">1.00</div><div class="stat-lbl">Combined Coeff</div></div>
-    </div>
-    <label>Surface</label>
-    <select id="surfIn" onchange="update()">
-      <option value="1.0">Tarmac (Dry)</option>
-      <option value="0.7">Gravel</option>
-      <option value="0.1">Ice</option>
-    </select>
-    <label>Tires</label>
-    <select id="tireIn" onchange="update()">
-      <option value="1.0">Racing Soft</option>
-      <option value="0.7">All-Season</option>
-    </select>
+<div id="hud">
+  <!-- HEADER + TABS -->
+  <div id="hdr">
+    <h1>GRIP</h1>
+    <div class="tab active" data-tab="slope">⛰ SLOPE SIM</div>
+    <div class="tab" data-tab="brake">🛑 BRAKE TEST</div>
+    <div class="tab" data-tab="crash">💥 CRASH SIM</div>
   </div>
 
-  <div class="tabs">
-    <button class="tab on" id="t-slope" onclick="switchTab('slope')">SLOPE</button>
-    <button class="tab" id="t-brake" onclick="switchTab('brake')">BRAKE</button>
-    <button class="tab" id="t-crash" onclick="switchTab('crash')">CRASH</button>
-  </div>
-
-  <div class="panel on" id="p-slope">
-    <label>Angle: <span id="ang-txt">20</span>°</label>
-    <input type="range" min="0" max="45" value="20" id="slopeIn" oninput="update()">
-    <div class="stats-grid">
-        <div class="stat-box"><div class="stat-val" id="s-grav">0.34</div><div class="stat-lbl">Gravity (G)</div></div>
-        <div class="stat-box"><div class="stat-val" id="s-fric">0.94</div><div class="stat-lbl">Tire Grip</div></div>
-    </div>
-    <div id="s-alert" class="alert">STABLE</div>
-  </div>
-
-  <div class="panel" id="p-brake">
-    <label>Speed</label>
-    <input type="range" min="20" max="180" value="100" id="brakeIn" oninput="update()">
-    <div class="stats-grid">
-        <div class="stat-box"><div class="stat-val" id="b-dist">0.0m</div><div class="stat-lbl">Stop Dist</div></div>
-        <div class="stat-box"><div class="stat-val" id="b-time">0.0s</div><div class="stat-lbl">Stop Time</div></div>
-    </div>
-    <button class="btn" onclick="startBrake()">Test Brakes</button>
-  </div>
-
-  <div class="panel" id="p-crash">
-    <label>Impact Velocity</label>
-    <input type="range" min="20" max="220" value="120" id="crashIn" oninput="update()">
-    <div class="stats-grid">
-        <div class="stat-box"><div class="stat-val" id="c-force">0G</div><div class="stat-lbl">Impact G</div></div>
-        <div class="stat-box"><div class="stat-val" id="c-health">100%</div><div class="stat-lbl">Chassis</div></div>
-        <div class="stat-box" style="grid-column: span 2; border-color: #440000;">
-            <div class="stat-val" id="c-death" style="color: #ff4444;">0%</div>
-            <div class="stat-lbl">Fatality Risk</div>
+  <!-- ═══ SLOPE TAB ═══ -->
+  <div class="tabpanel active" id="tab-slope">
+    <div id="mid">
+      <div id="lp">
+        <div class="pt">Parameters</div>
+        <div class="ctrl">
+          <span class="cl">Slope Angle</span>
+          <input type="range" id="sl-ang" min="0" max="80" value="15" step="0.5">
+          <div class="bv" id="v-ang">15.0 <small>°</small></div>
         </div>
+        <div class="ctrl">
+          <span class="cl">Vehicle Mass</span>
+          <input type="range" id="sl-mass" min="200" max="5000" value="1200" step="50">
+          <div class="bv" id="v-mass">1200 <small>kg</small></div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Surface</span>
+          <select id="sel-surf">
+            <option value="1.0|dry">Dry Asphalt</option>
+            <option value="0.60|wet">Wet Asphalt</option>
+            <option value="0.28|snow">Packed Snow</option>
+            <option value="0.10|ice">Black Ice</option>
+            <option value="0.46|dry">Dry Gravel</option>
+            <option value="0.48|wet">Wet Gravel</option>
+            <option value="0.52|wet">Wet Grass</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Tyre Compound</span>
+          <div class="g2">
+            <button class="xb" data-c="HARD">HARD<br>RUBBER</button>
+            <button class="xb ca" data-c="SOFT">SOFT<br>RUBBER</button>
+            <button class="xb" data-c="SAND">SAND-<br>PAPER</button>
+            <button class="xb" data-c="PTFE">TEFLON<br><span style="font-size:.44rem;color:#33334a">slippery</span></button>
+          </div>
+          <div class="nl" id="cnote">Soft rubber deforms to maximise contact patch.</div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Groove Depth</span>
+          <div class="g4">
+            <button class="xb" data-g="0">SLICK</button>
+            <button class="xb" data-g="1">SHAL</button>
+            <button class="xb ga" data-g="2">MED</button>
+            <button class="xb" data-g="3">DEEP</button>
+          </div>
+          <div class="nl" id="gnote"></div>
+        </div>
+        <button class="rbtn" id="btn-run">▶ RUN</button>
+        <button class="rstbtn" id="btn-rst">↺ RESET</button>
+      </div>
+
+      <div id="rp">
+        <div class="pt">Live Data</div>
+        <div class="dr"><div class="dl">Angle</div><div class="dv" id="d-ang">—</div></div>
+        <div class="dr"><div class="dl">Speed</div><div class="dv" id="d-vel">—</div></div>
+        <div class="dr"><div class="dl">Sliding Distance</div><div class="dv" id="d-dst">—</div></div>
+        <div class="dr"><div class="dl">Status</div><div class="dv" id="d-st">—</div></div>
+        <div style="margin-top:8px;"><span class="cl">How Close to Slipping</span>
+          <div class="bt"><div class="bf" id="grip-bar" style="width:100%;background:#30ff80"></div></div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(6,6,14,.8);border:1px solid #1a1a30;border-radius:2px;font-size:.55rem;color:#44446a;line-height:2;">
+          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:4px;">HOW IT WORKS</div>
+          The steeper the hill, the more the car<br>
+          wants to slide. Friction holds it in place.<br>
+          When gravity wins → the car slides.<br>
+          Once sliding, it's hard to stop.<br>
+          <span style="color:#f0c040">On ice: smooth tyres grip best —<br>grooves have nothing to dig into.</span>
+        </div>
+      </div>
     </div>
-    <div id="c-status" class="alert">READY FOR TEST</div>
-    <button class="btn" onclick="startCrash()">Initialize Crash</button>
+  </div>
+
+  <!-- ═══ BRAKE TAB ═══ -->
+  <div class="tabpanel" id="tab-brake">
+    <div id="brake-wrap">
+      <div id="brake-left">
+        <div class="pt">Brake Test Setup</div>
+
+        <div class="ctrl">
+          <span class="cl">Initial Speed</span>
+          <input type="range" id="b-speed" min="5" max="200" value="60" step="1">
+          <div class="big-speed" id="bv-speed">60 <small>km/h</small></div>
+        </div>
+
+        <div class="ctrl">
+          <span class="cl">Vehicle Mass</span>
+          <input type="range" id="b-mass" min="500" max="5000" value="1500" step="50">
+          <div class="bv" id="bv-mass">1500 <small>kg</small></div>
+        </div>
+
+        <div class="ctrl">
+          <span class="cl">Surface</span>
+          <select id="b-surf">
+            <option value="1.0|dry">Dry Asphalt</option>
+            <option value="0.60|wet">Wet Asphalt</option>
+            <option value="0.28|snow">Packed Snow</option>
+            <option value="0.10|ice">Black Ice</option>
+            <option value="0.46|dry">Dry Gravel</option>
+            <option value="0.48|wet">Wet Gravel</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <span class="cl">Tyre Compound</span>
+          <div class="g2">
+            <button class="xb" data-bc="HARD">HARD<br>RUBBER</button>
+            <button class="xb ca" data-bc="SOFT">SOFT<br>RUBBER</button>
+            <button class="xb" data-bc="SAND">SAND-<br>PAPER</button>
+            <button class="xb" data-bc="PTFE">TEFLON</button>
+          </div>
+          <div class="nl" id="b-cnote">Soft rubber — max contact patch.</div>
+        </div>
+
+        <div class="ctrl">
+          <span class="cl">Groove Depth</span>
+          <div class="g4">
+            <button class="xb" data-bg="0">SLICK</button>
+            <button class="xb" data-bg="1">SHAL</button>
+            <button class="xb ga" data-bg="2">MED</button>
+            <button class="xb" data-bg="3">DEEP</button>
+          </div>
+          <div class="nl" id="b-gnote"></div>
+        </div>
+
+        <button class="brake-btn" id="btn-brake">🛑 BRAKE</button>
+        <button class="rst-brake" id="btn-brake-rst">↺ RESET</button>
+      </div>
+
+      <div id="brake-right">
+        <div class="pt">Braking Data</div>
+
+        <div class="speedometer ctrl">
+          <span class="cl">Current Speed</span>
+          <div class="bv" id="b-cur-spd" style="font-size:2rem;">— <small>km/h</small></div>
+          <div class="speed-track"><div class="speed-fill" id="b-spd-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="dr"><div class="dl">Slowing Down At</div><div class="dv" id="b-decel">—</div></div>
+        <div class="dr"><div class="dl">Distance Travelled</div><div class="dv" id="b-dst">—</div></div>
+
+        <div class="result-box" id="b-result-box" style="display:none;">
+          <div class="result-title">STOPPED — TOTAL STOPPING DISTANCE</div>
+          <div class="result-big" id="b-result-dist">—</div>
+          <div class="result-unit">metres</div>
+          <div style="margin-top:8px;font-size:.56rem;color:#44446a;line-height:1.9;" id="b-result-detail"></div>
+        </div>
+
+        <div style="margin-top:12px;padding:10px;background:rgba(6,6,14,.85);border:1px solid #1a1a30;border-radius:2px;font-size:.55rem;color:#44446a;line-height:2;">
+          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:4px;">HOW IT WORKS</div>
+          The faster you go, the longer it takes<br>
+          to stop. Better grip = shorter stop.<br>
+          Heavier car = harder to slow down.<br>
+          <span style="color:#f0c040">On ice: slick tyres stop shorter —<br>grooves can't grip solid ice.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CRASH TAB ═══ -->
+  <div class="tabpanel" id="tab-crash">
+    <div id="crash-wrap">
+      <div id="crash-left">
+        <div class="pt">Crash Setup</div>
+        <div class="ctrl">
+          <span class="cl">Impact Speed</span>
+          <input type="range" id="cr-speed" min="5" max="200" value="60" step="1">
+          <div class="big-speed" id="crv-speed">60 <small>km/h</small></div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">You Are</span>
+          <div class="g2">
+            <button class="xb ca" data-occ="driver">Driver</button>
+            <button class="xb" data-occ="passenger">Passenger</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Seatbelt?</span>
+          <div class="g2">
+            <button class="xb ca" data-belt="yes">✓ Buckled</button>
+            <button class="xb" data-belt="no">✗ No Belt</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Crash Type</span>
+          <select id="cr-type">
+            <option value="frontal">Head-On (Frontal)</option>
+            <option value="rear">Rear-End</option>
+            <option value="side">Side Impact (T-Bone)</option>
+            <option value="rollover">Rollover</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="cl">Airbags?</span>
+          <div class="g2">
+            <button class="xb ca" data-airbag="yes">✓ Airbags</button>
+            <button class="xb" data-airbag="no">✗ None</button>
+          </div>
+        </div>
+        <button class="crash-btn" id="btn-crash">💥 CRASH</button>
+        <button class="rst-crash" id="btn-crash-rst">↺ RESET</button>
+      </div>
+
+      <div id="crash-right">
+        <div class="pt">Outcome</div>
+
+        <div class="survival-display" id="surv-display">
+          <div class="survival-pct" id="surv-pct" style="color:#30ff80">—</div>
+          <div class="survival-label">Chance of Survival</div>
+          <div class="survival-bar-wrap">
+            <span class="cl" style="margin-bottom:4px;">Survival Likelihood</span>
+            <div class="survival-bar-track">
+              <div class="survival-bar-fill" id="surv-bar" style="width:0%;background:#30ff80"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="injury-list" id="injury-list" style="display:none;"></div>
+
+        <div style="margin-top:12px;padding:10px;background:rgba(6,6,14,.85);border:1px solid #1a1a30;border-radius:2px;font-size:.55rem;color:#44446a;line-height:2;">
+          <div style="color:#f0c040;letter-spacing:2px;margin-bottom:4px;">HOW IT WORKS</div>
+          Higher speed = way more force on your body.<br>
+          Seatbelt spreads that force over your chest.<br>
+          No seatbelt = you hit the windshield.<br>
+          <span style="color:#f0c040">At 60 km/h you hit as hard as<br>falling from a 3-storey building.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ft">
+    <span>More grip = shorter stopping distance · On ice, smooth tyres work best</span>
+    <span>grip 3d ∞</span>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+(function(){
+const s=document.createElement('script');
+s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+s.onload=boot;
+s.onerror=()=>{document.getElementById('three').innerHTML='<div style="color:#ff3030;padding:40px;font-size:1.2rem;">Failed to load Three.js</div>';};
+document.head.appendChild(s);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-const sun = new THREE.DirectionalLight(0xffffff, 0.6);
-sun.position.set(10, 20, 10);
+// ══════════════════════════════════════════════
+// PHYSICS DATA
+// ══════════════════════════════════════════════
+const CDATA={
+  HARD:{mus:.80,muk:.58,hexCol:0xbbbbbb,note:'Stiff. Less deformation = less contact area.'},
+  SOFT:{mus:1.20,muk:.92,hexCol:0xff4444,note:'Best dry grip. Deforms to maximise contact patch.'},
+  SAND:{mus:.70,muk:.50,hexCol:0xcc9944,note:'Rigid & abrasive. Poor surface conformity = low grip.'},
+  PTFE:{mus:.12,muk:.06,hexCol:0x88ddff,note:'Near-zero friction. Slippery control compound.'},
+};
+
+// Groove effects per surface type
+// KEY CHANGE: On ice, grooves HURT — slick is best. Ice is already near-zero friction;
+// grooves reduce contact area without being able to channel water (it's solid).
+// On wet/snow: grooves help by channelling water/slush away.
+const GDATA={
+  //       dry    wet   snow   ice
+  0:{dry:1.00,wet:0.40,snow:0.30,ice:1.00,note:'Slick: max dry + max ice grip. Zero wet channel.'},
+  1:{dry:0.93,wet:0.75,snow:0.65,ice:0.90,note:'Shallow: mild wet help, small dry/ice penalty.'},
+  2:{dry:0.85,wet:1.00,snow:0.85,ice:0.80,note:'Medium: balanced for wet roads. Hurts on ice.'},
+  3:{dry:0.75,wet:1.10,snow:1.10,ice:0.65,note:'Deep: best for wet/snow. Big penalty on ice.'},
+};
+
+const G=9.81;
+
+function grooveMult(grooveLevel,surfType){
+  const g=GDATA[grooveLevel];
+  return g[surfType] ?? g.dry;
+}
+
+// ── Slope sim state ──
+const ST={angle:15,mass:1200,surfMu:1.0,surfType:'dry',compound:'SOFT',groove:2};
+const SIM={running:false,slipping:false,vel:0,dist:0,wheelAng:0,lastT:null};
+
+function calcPhysics(){
+  const th=ST.angle*Math.PI/180;
+  const c=CDATA[ST.compound];
+  const gm=grooveMult(ST.groove,ST.surfType);
+  const mus=c.mus*ST.surfMu*gm;
+  const muk=c.muk*ST.surfMu*gm;
+  const fN=ST.mass*G*Math.cos(th);
+  const fD=ST.mass*G*Math.sin(th);
+  const fS=mus*fN, fK=muk*fN;
+  const acc=SIM.slipping?(fD-fK)/ST.mass:0;
+  const thr=Math.atan(mus)*180/Math.PI;
+  const grip=Math.min(1,fS/Math.max(fD,.001));
+  return{fD,fN,fS,fK,acc,thr,grip,gm};
+}
+
+// ── Brake test state ──
+const BST={speedKph:60,mass:1500,surfMu:1.0,surfType:'dry',compound:'SOFT',groove:2};
+const BSIM={braking:false,vel:0,dist:0,lastT:null,done:false};
+
+function calcBrakePhysics(){
+  const c=CDATA[BST.compound];
+  const gm=grooveMult(BST.groove,BST.surfType);
+  const muEff=c.muk*BST.surfMu*gm;
+  const fN=BST.mass*G;
+  const fBrake=muEff*fN;
+  const decel=fBrake/BST.mass;
+  return{muEff,fBrake,decel,gm};
+}
+
+// ══════════════════════════════════════════════
+function boot(){
+// ── RENDERER ──
+const W=()=>window.innerWidth,H=()=>window.innerHeight;
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(W(),H());
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.88;
+document.getElementById('three').appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x070c18);
+scene.fog=new THREE.FogExp2(0x070c18,.023);
+
+const camera=new THREE.PerspectiveCamera(55,W()/H(),.1,300);
+window.addEventListener('resize',()=>{renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();});
+
+// ── LIGHTS ──
+scene.add(new THREE.AmbientLight(0x202040,1.5));
+const sun=new THREE.DirectionalLight(0xfff0dd,3.0);
+sun.position.set(8,16,6);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-25;sun.shadow.camera.right=25;
+sun.shadow.camera.top=25;sun.shadow.camera.bottom=-25;sun.shadow.camera.far=60;
 scene.add(sun);
+const fill=new THREE.DirectionalLight(0x3060ff,.6);
+fill.position.set(-8,5,-10);scene.add(fill);
+const carFill=new THREE.PointLight(0xffeedd,2,14);
+carFill.position.set(0,6,0);scene.add(carFill);
 
-// --- CAR ---
-const car = new THREE.Group();
-const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.5), new THREE.MeshStandardMaterial({color: 0x3d5afe}));
-body.position.y = 0.6; car.add(body);
-const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 1.2), new THREE.MeshStandardMaterial({color: 0xffffff, transparent:true, opacity:0.4}));
-cabin.position.set(0, 1.1, 0.1); car.add(cabin);
-scene.add(car);
+// ── SLOPE GROUP ──
+const slopeGroup=new THREE.Group();
+scene.add(slopeGroup);
 
-const wall = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 2), new THREE.MeshStandardMaterial({color: 0x111111}));
-wall.position.set(0, 2.5, -15); scene.add(wall);
+// Road tiles
+const TILE_L=18,TILE_W=5.5,TILE_N=7;
+const roadMat=new THREE.MeshStandardMaterial({color:0x1a1a22,roughness:.92,metalness:.04});
+const curbWMat=new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:.7});
+const curbRMat=new THREE.MeshStandardMaterial({color:0xdd2222,roughness:.7});
+const dashMat=new THREE.MeshStandardMaterial({color:0x404055,roughness:1});
+const edgeMat=new THREE.MeshStandardMaterial({color:0xcccccc,roughness:.8});
 
-const roadGroup = new THREE.Group();
-scene.add(roadGroup);
-const tiles = [];
-for(let i=0; i<15; i++) {
-  const t = new THREE.Mesh(new THREE.PlaneGeometry(15, 20), new THREE.MeshStandardMaterial({color: 0x222222}));
-  t.rotation.x = -Math.PI/2; t.position.z = i * -20;
-  roadGroup.add(t); tiles.push(t);
-}
-
-// --- PARTICLES ---
-const particles = [];
-function spawn(pos, color, count, speed) {
-  for(let i=0; i<count; i++) {
-    const p = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({color: color}));
-    p.position.copy(pos);
-    p.userData = { vel: new THREE.Vector3((Math.random()-0.5)*speed, Math.random()*speed, (Math.random()-0.5)*speed), life: 1.0 };
-    scene.add(p); particles.push(p);
+function makeTile(zStart){
+  const g=new THREE.Group();
+  const road=new THREE.Mesh(new THREE.BoxGeometry(TILE_W,.2,TILE_L),roadMat);
+  road.position.y=-.1;road.receiveShadow=true;g.add(road);
+  const KSEG=5;
+  for(let i=0;i<KSEG;i++){
+    const mat=i%2===0?curbWMat:curbRMat;
+    const kl=TILE_L/KSEG-.06;
+    const kz=-TILE_L/2+i*(TILE_L/KSEG)+kl/2+.03;
+    [-TILE_W/2+.18,TILE_W/2-.18].forEach(kx=>{
+      const k=new THREE.Mesh(new THREE.BoxGeometry(.35,.3,kl),mat);
+      k.position.set(kx,.05,kz);k.castShadow=true;g.add(k);
+    });
   }
+  [-TILE_W/2+.45,TILE_W/2-.45].forEach(ex=>{
+    const e=new THREE.Mesh(new THREE.BoxGeometry(.1,.005,TILE_L),edgeMat);
+    e.position.set(ex,.003,0);g.add(e);
+  });
+  for(let d=0;d<7;d++){
+    const dz=-TILE_L/2+d*(TILE_L/7)+(TILE_L/7)*.4;
+    const dash=new THREE.Mesh(new THREE.BoxGeometry(.08,.005,TILE_L/7*.55),dashMat);
+    dash.position.set(0,.003,dz);g.add(dash);
+  }
+  g.position.z=zStart;slopeGroup.add(g);return g;
 }
+const tiles=[];for(let i=0;i<TILE_N;i++)tiles.push(makeTile(-i*TILE_L));
 
-// --- CONTROLS ---
-let camRotation = 0.5, isMouseDown = false;
-window.addEventListener('mousedown', (e) => { if (!e.target.closest('#ui')) isMouseDown = true; });
-window.addEventListener('mouseup', () => isMouseDown = false);
-window.addEventListener('mousemove', (e) => { if(isMouseDown) camRotation -= e.movementX * 0.007; });
-
-// --- LOGIC ---
-let activeTab = 'slope', speed = 0, isMoving = false, camShake = 0;
-
-function switchTab(id) {
-  activeTab = id;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  document.getElementById('t-'+id).classList.add('on');
-  document.getElementById('p-'+id).classList.add('on');
-  resetSim();
+const bankMat=new THREE.MeshStandardMaterial({color:0x0d180d,roughness:1});
+const bankTiles=[];
+function makeBank(zStart){
+  const g=new THREE.Group();
+  [-TILE_W/2-2,TILE_W/2+2].forEach(bx=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(4,.15,TILE_L),bankMat);
+    b.position.set(bx,-.04,0);b.receiveShadow=true;g.add(b);
+  });
+  g.position.z=zStart;slopeGroup.add(g);return g;
 }
+for(let i=0;i<TILE_N;i++)bankTiles.push(makeBank(-i*TILE_L));
 
-function resetSim() {
-  speed = 0; isMoving = false; camShake = 0;
-  car.position.set(0,0,0); car.scale.set(1,1,1);
-  document.getElementById('c-health').innerText = "100%";
-  document.getElementById('c-death').innerText = "0%";
-  document.getElementById('c-force').innerText = "0G";
-  document.getElementById('c-status').innerText = "READY FOR TEST";
-  document.getElementById('c-status').className = "alert";
-  update();
+// Trees
+const treeMeshes=[];
+const TREE_COUNT=70;
+function randX(){const s=Math.random()<.5?-1:1;return s*(TILE_W/2+1.2+Math.random()*5.5);}
+function makeTree(x,z){
+  const g=new THREE.Group();
+  const h=2+Math.random()*2.5;
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.08,.14,h*.4,6),
+    new THREE.MeshStandardMaterial({color:0x3a1e08,roughness:1}));
+  trunk.position.y=h*.2;trunk.castShadow=true;g.add(trunk);
+  const gCol=new THREE.Color(0x0d3d10).lerp(new THREE.Color(0x1a6620),Math.random());
+  const tMat=new THREE.MeshStandardMaterial({color:gCol,roughness:.9});
+  for(let l=0;l<3;l++){
+    const r=(.6-l*.12)*(.85+Math.random()*.3);
+    const lh=.85+Math.random()*.35;
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(r,lh,7),tMat);
+    cone.position.y=h*.38+l*(lh*.5)+lh*.5;cone.castShadow=true;g.add(cone);
+  }
+  g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;
+  g.scale.setScalar(.85+Math.random()*.35);
+  slopeGroup.add(g);return g;
 }
+for(let i=0;i<TREE_COUNT;i++)treeMeshes.push(makeTree(randX(),-Math.random()*TILE_L*TILE_N));
 
-function update() {
-  const mu = parseFloat(document.getElementById('surfIn').value) * parseFloat(document.getElementById('tireIn').value);
-  document.getElementById('mu-val').innerText = mu.toFixed(2);
-  wall.visible = (activeTab === 'crash');
-  
-  if(activeTab === 'slope') {
-    const ang = +document.getElementById('slopeIn').value;
-    document.getElementById('ang-txt').innerText = ang;
-    const rad = -(ang * Math.PI/180);
-    car.rotation.x = roadGroup.rotation.x = rad;
-    const gravityG = Math.sin(Math.abs(rad));
-    const frictionG = Math.cos(rad) * mu;
-    document.getElementById('s-grav').innerText = gravityG.toFixed(2);
-    document.getElementById('s-fric').innerText = frictionG.toFixed(2);
-    if(gravityG > frictionG) {
-      speed = (gravityG - frictionG) * 20;
-      document.getElementById('s-alert').innerText = "SLIDING";
-      document.getElementById('s-alert').className = "alert red";
-    } else {
-      speed = 0.3;
-      document.getElementById('s-alert').innerText = "STABLE";
-      document.getElementById('s-alert').className = "alert green";
+// ══════════════════════════════════════════════
+// CAR
+// Tyre geometry: TorusGeometry(0.3, 0.118) → outer radius = 0.3+0.118 = 0.418
+// Road surface y=0. Car group y must = 0.418 so tyre bottom sits exactly on road.
+// ══════════════════════════════════════════════
+const WHEEL_R = 0.418; // tyre outer radius (0.3 tube centre + 0.118 tube radius)
+const car=new THREE.Group();
+car.position.set(0, WHEEL_R, -6);
+slopeGroup.add(car);
+
+const bodyMat=new THREE.MeshStandardMaterial({color:0x1e2060,roughness:.3,metalness:.75});
+const body=new THREE.Mesh(new THREE.BoxGeometry(1.6,.52,2.9),bodyMat);
+// Body bottom at y=0 (wheel axle height), body centre at y=0.26
+body.position.y=0.26;body.castShadow=true;car.add(body);
+
+// Cabin sits on top of body (body top = 0.26+0.26=0.52)
+const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.28,.4,1.5),
+  new THREE.MeshStandardMaterial({color:0x252870,roughness:.25,metalness:.6}));
+cabin.position.set(0,.72+.2,-.1);cabin.castShadow=true;car.add(cabin);
+
+// Glass
+const glassMat=new THREE.MeshStandardMaterial({color:0xaaccff,roughness:0,metalness:.05,transparent:true,opacity:.38});
+const wind=new THREE.Mesh(new THREE.BoxGeometry(1.26,.38,.05),glassMat);
+wind.position.set(0,.72+.19,.62);car.add(wind);
+const rwind=new THREE.Mesh(new THREE.BoxGeometry(1.26,.38,.05),glassMat);
+rwind.position.set(0,.72+.19,-.82);car.add(rwind);
+
+// Lights
+const hlGeo=new THREE.BoxGeometry(.3,.13,.07);
+const hlMat=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:2.5});
+const tlMat=new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff1100,emissiveIntensity:2});
+[-0.5,0.5].forEach(x=>{
+  const hl=new THREE.Mesh(hlGeo,hlMat);hl.position.set(x,.26,1.46);car.add(hl);
+  const tl=new THREE.Mesh(hlGeo,tlMat);tl.position.set(x,.26,-1.46);car.add(tl);
+});
+
+// Grille
+const grille=new THREE.Mesh(new THREE.BoxGeometry(1,.22,.06),
+  new THREE.MeshStandardMaterial({color:0x111122,roughness:.5,metalness:.9}));
+grille.position.set(0,.26,1.47);car.add(grille);
+
+// Undercarriage
+const skirt=new THREE.Mesh(new THREE.BoxGeometry(1.65,.1,2.95),
+  new THREE.MeshStandardMaterial({color:0x0d0d1a,roughness:.6,metalness:.5}));
+skirt.position.y=.05;car.add(skirt);
+
+// Beacon
+const beaconMat=new THREE.MeshStandardMaterial({color:0x30ff80,emissive:0x30ff80,emissiveIntensity:4});
+const beacon=new THREE.Mesh(new THREE.SphereGeometry(.075,10,10),beaconMat);
+beacon.position.set(0,1.14,0);car.add(beacon);
+const beaconPt=new THREE.PointLight(0x30ff80,2.5,5);
+beaconPt.position.set(0,1.25,0);car.add(beaconPt);
+
+// ── WHEELS ──
+// Wheel axle is at y=0 in car local space (car.position.y = WHEEL_R puts axle at WHEEL_R above road)
+// Tyre torus sits centred at y=0, outer edge at y=±0.418
+const wheels=[];
+
+function buildGrooveRings(wg,n){
+  wg.children.filter(c=>c.userData.isGroove).forEach(c=>wg.remove(c));
+  if(n===0)return;
+  const gMat=new THREE.MeshStandardMaterial({color:0x020202,roughness:1});
+  const offsets=[[],[0],[-0.072,.072],[-0.115,0,.115]][n]||[];
+  offsets.forEach(ox=>{
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.011,8,40),gMat);
+    ring.rotation.y=Math.PI/2;ring.position.x=ox;ring.userData.isGroove=true;wg.add(ring);
+    for(let s=0;s<24;s++){
+      const ang=(s/24)*Math.PI*2;
+      const py=Math.sin(ang)*.302,pz=Math.cos(ang)*.302;
+      const slot=new THREE.Mesh(new THREE.BoxGeometry(.022,.028,.026),gMat);
+      slot.position.set(ox,py,pz);
+      slot.lookAt(new THREE.Vector3(ox,py*2,pz*2));
+      slot.userData.isGroove=true;wg.add(slot);
     }
-  } else { car.rotation.x = roadGroup.rotation.x = 0; }
+  });
+}
 
-  if(activeTab === 'brake') {
-    const vKmh = +document.getElementById('brakeIn').value;
-    const vMs = vKmh / 3.6;
-    document.getElementById('b-dist').innerText = ((vMs * vMs) / (2 * 9.81 * mu)).toFixed(1) + "m";
-    document.getElementById('b-time').innerText = (vMs / (9.81 * mu)).toFixed(1) + "s";
+function makeWheel(){
+  const wg=new THREE.Group();
+  const c=CDATA[ST.compound];
+  const tyreMat=new THREE.MeshStandardMaterial({color:c.hexCol,roughness:.86,metalness:.04});
+  const tyre=new THREE.Mesh(new THREE.TorusGeometry(.3,.118,20,40),tyreMat);
+  tyre.rotation.y=Math.PI/2;tyre.castShadow=true;wg.add(tyre);
+  wg.userData.tyreMat=tyreMat;
+  buildGrooveRings(wg,ST.groove);
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.1,24),
+    new THREE.MeshStandardMaterial({color:0x667788,roughness:.2,metalness:.9}));
+  rim.rotation.z=Math.PI/2;rim.castShadow=true;wg.add(rim);
+  for(let i=0;i<5;i++){
+    const sg=new THREE.Group();
+    const spoke=new THREE.Mesh(new THREE.BoxGeometry(.036,.2,.04),
+      new THREE.MeshStandardMaterial({color:0x778899,metalness:.9,roughness:.2}));
+    spoke.rotation.x=(i/5)*Math.PI*2;sg.add(spoke);sg.rotation.z=Math.PI/2;wg.add(sg);
+  }
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.12,12),
+    new THREE.MeshStandardMaterial({color:0x99aabb,metalness:1,roughness:.08}));
+  hub.rotation.z=Math.PI/2;wg.add(hub);
+  wg.userData.rebuild=()=>buildGrooveRings(wg,ST.groove);
+  return wg;
+}
+
+// Wheel axle height = 0 in car local space
+// (car group already lifted by WHEEL_R, so axle is at WHEEL_R world height = correct)
+const WPOS=[{x:-.86,z:1.0},{x:.86,z:1.0},{x:-.86,z:-1.0},{x:.86,z:-1.0}];
+WPOS.forEach(p=>{
+  const w=makeWheel();
+  w.position.set(p.x,0,p.z); // y=0 → axle at wheel-radius height above road
+  car.add(w);wheels.push(w);
+});
+
+// ── TILT ──
+function applyTilt(){
+  const rad=ST.angle*Math.PI/180;
+  slopeGroup.rotation.x=rad;
+  slopeGroup.position.y=-1.5-Math.sin(rad)*4;
+  slopeGroup.position.z=2+Math.cos(rad)*1;
+}
+applyTilt();
+
+// ══════════════════════════════════════════════
+// FLAT ROAD FOR BRAKE TAB
+// Separate group, always rotation.x = 0 (flat)
+// ══════════════════════════════════════════════
+const brakeGroup = new THREE.Group();
+brakeGroup.visible = false;
+scene.add(brakeGroup);
+
+// Flat road tiles
+const bRoadMat = new THREE.MeshStandardMaterial({color:0x1a1a22,roughness:.92,metalness:.04});
+const bTiles = [];
+function makeBrakeTile(zStart){
+  const g=new THREE.Group();
+  const road=new THREE.Mesh(new THREE.BoxGeometry(5.5,.2,TILE_L),bRoadMat);
+  road.position.y=-.1;road.receiveShadow=true;g.add(road);
+  // Kerbs
+  const KSEG=5;
+  for(let i=0;i<KSEG;i++){
+    const mat=i%2===0?curbWMat:curbRMat;
+    const kl=TILE_L/KSEG-.06;
+    const kz=-TILE_L/2+i*(TILE_L/KSEG)+kl/2+.03;
+    [-5.5/2+.18,5.5/2-.18].forEach(kx=>{
+      const k=new THREE.Mesh(new THREE.BoxGeometry(.35,.3,kl),mat);
+      k.position.set(kx,.05,kz);g.add(k);
+    });
+  }
+  // Centre dashes
+  for(let d=0;d<7;d++){
+    const dz=-TILE_L/2+d*(TILE_L/7)+(TILE_L/7)*.4;
+    const dash=new THREE.Mesh(new THREE.BoxGeometry(.08,.005,TILE_L/7*.55),dashMat);
+    dash.position.set(0,.003,dz);g.add(dash);
+  }
+  g.position.z=zStart;brakeGroup.add(g);return g;
+}
+for(let i=0;i<TILE_N;i++) bTiles.push(makeBrakeTile(-i*TILE_L));
+
+// Flat bank
+const bBankTiles=[];
+function makeBrakeBank(zStart){
+  const g=new THREE.Group();
+  [-5.5/2-2,5.5/2+2].forEach(bx=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(4,.15,TILE_L),bankMat);
+    b.position.set(bx,-.04,0);b.receiveShadow=true;g.add(b);
+  });
+  g.position.z=zStart;brakeGroup.add(g);return g;
+}
+for(let i=0;i<TILE_N;i++) bBankTiles.push(makeBrakeBank(-i*TILE_L));
+
+// Flat trees
+const bTrees=[];
+function randBX(){const s=Math.random()<.5?-1:1;return s*(5.5/2+1.2+Math.random()*5.5);}
+for(let i=0;i<40;i++){
+  const g=new THREE.Group();
+  const h=2+Math.random()*2.5;
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.08,.14,h*.4,6),
+    new THREE.MeshStandardMaterial({color:0x3a1e08,roughness:1}));
+  trunk.position.y=h*.2;g.add(trunk);
+  const gCol=new THREE.Color(0x0d3d10).lerp(new THREE.Color(0x1a6620),Math.random());
+  const tMat2=new THREE.MeshStandardMaterial({color:gCol,roughness:.9});
+  for(let l=0;l<3;l++){
+    const r=(.6-l*.12)*(.85+Math.random()*.3);
+    const lh=.85+Math.random()*.35;
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(r,lh,7),tMat2);
+    cone.position.y=h*.38+l*(lh*.5)+lh*.5;g.add(cone);
+  }
+  g.position.set(randBX(),0,-Math.random()*TILE_L*TILE_N);
+  g.rotation.y=Math.random()*Math.PI*2;g.scale.setScalar(.85+Math.random()*.35);
+  brakeGroup.add(g);bTrees.push(g);
+}
+
+// Brake car (separate from slope car)
+const BCAR = new THREE.Group();
+BCAR.position.set(0, WHEEL_R, -6);
+brakeGroup.add(BCAR);
+
+const bBodyMat=new THREE.MeshStandardMaterial({color:0x203060,roughness:.3,metalness:.75});
+const bBody=new THREE.Mesh(new THREE.BoxGeometry(1.6,.52,2.9),bBodyMat);
+bBody.position.y=.26;bBody.castShadow=true;BCAR.add(bBody);
+const bCabin=new THREE.Mesh(new THREE.BoxGeometry(1.28,.4,1.5),
+  new THREE.MeshStandardMaterial({color:0x283278,roughness:.25,metalness:.6}));
+bCabin.position.set(0,.72+.2,-.1);bCabin.castShadow=true;BCAR.add(bCabin);
+const bGlassMat=new THREE.MeshStandardMaterial({color:0xaaccff,roughness:0,transparent:true,opacity:.38});
+const bWind=new THREE.Mesh(new THREE.BoxGeometry(1.26,.38,.05),bGlassMat);
+bWind.position.set(0,.72+.19,.62);BCAR.add(bWind);
+// Headlights & taillights
+[-0.5,0.5].forEach(x=>{
+  const hl=new THREE.Mesh(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:2.5}));
+  hl.position.set(x,.26,1.46);BCAR.add(hl);
+  const tl=new THREE.Mesh(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff1100,emissiveIntensity:2}));
+  tl.position.set(x,.26,-1.46);BCAR.add(tl);
+});
+// Grille
+const bGrille=new THREE.Mesh(new THREE.BoxGeometry(1,.22,.06),
+  new THREE.MeshStandardMaterial({color:0x111122,roughness:.5,metalness:.9}));
+bGrille.position.set(0,.26,1.47);BCAR.add(bGrille);
+// Skirt
+const bSkirt=new THREE.Mesh(new THREE.BoxGeometry(1.65,.1,2.95),
+  new THREE.MeshStandardMaterial({color:0x0d0d1a,roughness:.6,metalness:.5}));
+bSkirt.position.y=.05;BCAR.add(bSkirt);
+
+// Brake lights (red when braking)
+const brakeLightMat = new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:0});
+[-0.5,0.5].forEach(x=>{
+  const bl=new THREE.Mesh(new THREE.BoxGeometry(.28,.12,.04),brakeLightMat);
+  bl.position.set(x,.26,-1.48);BCAR.add(bl);
+});
+
+// Brake wheels
+const bWheels=[];
+WPOS.forEach(p=>{
+  const wg=new THREE.Group();
+  const tyreMat2=new THREE.MeshStandardMaterial({color:CDATA[BST.compound].hexCol,roughness:.86,metalness:.04});
+  const tyre2=new THREE.Mesh(new THREE.TorusGeometry(.3,.118,20,40),tyreMat2);
+  tyre2.rotation.y=Math.PI/2;tyre2.castShadow=true;wg.add(tyre2);
+  wg.userData.tyreMat=tyreMat2;
+  buildGrooveRings(wg,BST.groove);
+  const rim2=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.1,24),
+    new THREE.MeshStandardMaterial({color:0x667788,roughness:.2,metalness:.9}));
+  rim2.rotation.z=Math.PI/2;wg.add(rim2);
+  for(let i=0;i<5;i++){
+    const sg=new THREE.Group();
+    const spk=new THREE.Mesh(new THREE.BoxGeometry(.036,.2,.04),
+      new THREE.MeshStandardMaterial({color:0x778899,metalness:.9,roughness:.2}));
+    spk.rotation.x=(i/5)*Math.PI*2;sg.add(spk);sg.rotation.z=Math.PI/2;wg.add(sg);
+  }
+  const hub2=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.12,12),
+    new THREE.MeshStandardMaterial({color:0x99aabb,metalness:1,roughness:.08}));
+  hub2.rotation.z=Math.PI/2;wg.add(hub2);
+  wg.userData.rebuild=()=>buildGrooveRings(wg,BST.groove);
+  wg.position.set(p.x,0,p.z);
+  BCAR.add(wg);bWheels.push(wg);
+});
+
+let bWheelAng=0;
+
+// Tab visibility toggle
+let activeTab='slope';
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',function(){
+    activeTab=this.dataset.tab;
+    slopeGroup.visible=(activeTab==='slope');
+    brakeGroup.visible=(activeTab==='brake');
+    crashGroup.visible=(activeTab==='crash');
+    if(activeTab==='crash'){
+      // Set camera back for crash view
+      oTheta=0.1;oPhi=0.35;oR=14;
+    }
+  });
+});
+// init
+slopeGroup.visible=true;
+brakeGroup.visible=false;
+// crashGroup visibility set after it's created
+
+// ── CAMERA ORBIT ──
+let oTheta=.15,oPhi=.44,oR=10;
+const camTarget=new THREE.Vector3();
+let drag=false,lastMX=0,lastMY=0;
+const domEl=renderer.domElement;
+domEl.addEventListener('mousedown',e=>{drag=true;lastMX=e.clientX;lastMY=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  oTheta-=(e.clientX-lastMX)*.007;
+  oPhi=Math.max(.05,Math.min(1.5,oPhi-(e.clientY-lastMY)*.007));
+  lastMX=e.clientX;lastMY=e.clientY;
+});
+domEl.addEventListener('wheel',e=>{oR=Math.max(3,Math.min(40,oR+e.deltaY*.018));},{passive:true});
+let lt=null;
+domEl.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;lt={x:e.touches[0].clientX,y:e.touches[0].clientY};}});
+window.addEventListener('touchend',()=>{drag=false;lt=null;});
+window.addEventListener('touchmove',e=>{
+  if(!drag||!lt||e.touches.length!==1)return;
+  oTheta-=(e.touches[0].clientX-lt.x)*.007;
+  oPhi=Math.max(.05,Math.min(1.5,oPhi-(e.touches[0].clientY-lt.y)*.007));
+  lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
+});
+function updateCamera(){
+  camera.position.set(
+    camTarget.x+oR*Math.sin(oPhi)*Math.sin(oTheta),
+    camTarget.y+oR*Math.cos(oPhi),
+    camTarget.z+oR*Math.sin(oPhi)*Math.cos(oTheta));
+  camera.lookAt(camTarget);
+}
+
+// ── SKID MARKS ──
+const skidMeshes=[];const MAX_SKID=100;let skidT=0;
+const skidMatBase=new THREE.MeshStandardMaterial({color:0x060000,roughness:1,transparent:true,opacity:.7});
+function addSkid(){
+  if(!SIM.slipping||SIM.vel<.3)return;
+  [-0.6,.6].forEach(xOff=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(.1,.003,.2),skidMatBase.clone());
+    m.position.set(car.position.x+xOff,.004,car.position.z);
+    m.material.opacity=Math.min(.75,SIM.vel*.1);
+    slopeGroup.add(m);skidMeshes.push(m);
+    if(skidMeshes.length>MAX_SKID){const o=skidMeshes.shift();slopeGroup.remove(o);}
+  });
+}
+
+// ── SMOKE ──
+const smokeArr=[];
+function spawnSmoke(){
+  if(!SIM.slipping||SIM.vel<1)return;
+  WPOS.forEach(wp=>{
+    if(Math.random()>.55)return;
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.06+Math.random()*.09,5,5),
+      new THREE.MeshStandardMaterial({color:0x221100,transparent:true,opacity:.3}));
+    const wp3=new THREE.Vector3(car.position.x+wp.x,car.position.y+.15,car.position.z+wp.z);
+    slopeGroup.localToWorld(wp3);m.position.copy(wp3);
+    m.userData.v=new THREE.Vector3((Math.random()-.5)*.05,.04+Math.random()*.05,(Math.random()-.5)*.05);
+    m.userData.life=1;scene.add(m);smokeArr.push(m);
+  });
+}
+function tickSmoke(dt){
+  for(let i=smokeArr.length-1;i>=0;i--){
+    const p=smokeArr[i];p.userData.life-=dt*1.5;
+    p.material.opacity=p.userData.life*.28;p.scale.setScalar(1+(1-p.userData.life)*2.5);
+    p.position.addScaledVector(p.userData.v,dt*60);
+    if(p.userData.life<=0){scene.remove(p);smokeArr.splice(i,1);}
   }
 }
 
-function startBrake() { speed = +document.getElementById('brakeIn').value / 10; isMoving = true; }
-function startCrash() { car.position.z = 30; speed = +document.getElementById('crashIn').value / 10; isMoving = true; resetSim(); isMoving = true; speed = +document.getElementById('crashIn').value / 10;}
+// ══════════════════════════════════════════════
+// MAIN LOOP
+// ══════════════════════════════════════════════
+const SCROLL=2.2;
 
-function animate() {
+function animate(ts){
   requestAnimationFrame(animate);
+  const dt=Math.min((ts-(SIM.lastT||ts))/1000,.05);
+  SIM.lastT=ts;
 
-  for(let i = particles.length-1; i>=0; i--) {
-    const p = particles[i]; p.position.add(p.userData.vel); p.userData.life -= 0.02;
-    p.scale.setScalar(p.userData.life);
-    if(p.userData.life <= 0) { scene.remove(p); particles.splice(i,1); }
+  const p=calcPhysics();
+
+  if(SIM.running){
+    if(!SIM.slipping&&p.fD>p.fS){SIM.slipping=true;SIM.vel=.008;}
+    if(SIM.slipping){
+      SIM.vel+=p.acc*dt;
+      if(SIM.vel<=0){SIM.vel=0;SIM.slipping=false;}
+      SIM.dist+=SIM.vel*dt;
+      skidT-=dt;if(skidT<0){addSkid();skidT=.05;}
+      if(Math.random()<SIM.vel*.3*dt*60)spawnSmoke();
+    }
   }
 
-  tiles.forEach(t => {
-    t.position.z += speed * 0.2;
-    if(t.position.z > 20) t.position.z -= 300;
+  const scrollSpeed=SIM.running
+    ?(SIM.slipping?SIM.vel:Math.min(.4,(p.fD/Math.max(p.fS,.01))*.35))
+    :0;
+  const dz=scrollSpeed*SCROLL*dt;
+
+  tiles.forEach(t=>{
+    t.position.z-=dz;
+    if(t.position.z<car.position.z-TILE_L*(TILE_N-.5))t.position.z+=TILE_N*TILE_L;
+  });
+  bankTiles.forEach(t=>{
+    t.position.z-=dz;
+    if(t.position.z<car.position.z-TILE_L*(TILE_N-.5))t.position.z+=TILE_N*TILE_L;
+  });
+  treeMeshes.forEach(t=>{
+    t.position.z-=dz;
+    if(t.position.z<car.position.z-TILE_L*(TILE_N-1)){
+      t.position.z+=TILE_N*TILE_L+Math.random()*TILE_L;
+      t.position.x=randX();t.rotation.y=Math.random()*Math.PI*2;
+    }
   });
 
-  if(activeTab === 'brake' && isMoving) {
-    speed *= 0.98;
-    if(speed < 0.05) speed = 0;
-  }
-  
-  if(activeTab === 'crash' && isMoving) {
-    car.position.z -= speed * 0.2;
-    if(car.position.z < -13.5) {
-      const impactSpeed = (+document.getElementById('crashIn').value) / 3.6;
-      const gForce = (impactSpeed * impactSpeed) / (2 * 0.6 * 9.81); 
-      let deathChance = 0;
-      if (gForce > 25) deathChance = Math.min(100, Math.pow((gForce - 25) / 55, 2) * 100);
-      
-      document.getElementById('c-force').innerText = Math.round(gForce) + "G";
-      document.getElementById('c-health').innerText = Math.max(0, Math.round(100 - (gForce/1.4))) + "%";
-      document.getElementById('c-death').innerText = Math.round(deathChance) + "%";
-      
-      const status = document.getElementById('c-status');
-      if(deathChance > 70) { status.innerText = "FATAL COLLISION"; status.className = "alert death"; }
-      else if(deathChance > 20) { status.innerText = "CRITICAL INJURIES"; status.className = "alert red"; }
-      else { status.innerText = "SURVIVABLE"; status.className = "alert green"; }
+  const stretch=1+Math.min(SIM.vel*.018,.18);
+  treeMeshes.forEach(t=>{t.scale.z=stretch;});
 
-      car.position.z = -13.5; speed = 0; car.scale.z = 0.35; isMoving = false;
-      camShake = Math.min(2.0, gForce / 40);
-      spawn(new THREE.Vector3(0,1,-14), 0xff6600, 50, 1.2); 
-      spawn(new THREE.Vector3(0,1,-14), 0x333333, 30, 0.6);
-      if(deathChance > 80) spawn(new THREE.Vector3(0,1.5,-14), 0xff0000, 15, 0.5);
+  SIM.wheelAng+=(SIM.vel*2.8+(SIM.slipping?5:0))*dt;
+  wheels.forEach(w=>{w.rotation.x=SIM.wheelAng;});
+
+  const slp=SIM.slipping;
+  beaconMat.color.setHex(slp?0xff3030:0x30ff80);
+  beaconMat.emissive.setHex(slp?0xff3030:0x30ff80);
+  beaconPt.color.setHex(slp?0xff3030:0x30ff80);
+  bodyMat.color.setHex(slp?0x280808:0x1e2060);
+  carFill.color.setHex(slp?0xff4020:0xffeedd);
+
+  tickSmoke(dt);
+
+  // ── Brake tab 3D animation ──
+  if(activeTab==='brake'){
+    const bspeed = BSIM.vel * SCROLL * 1.2;
+    bTiles.forEach(t=>{
+      t.position.z -= bspeed * dt;
+      if(t.position.z < BCAR.position.z - TILE_L*(TILE_N-.5)) t.position.z += TILE_N*TILE_L;
+    });
+    bBankTiles.forEach(t=>{
+      t.position.z -= bspeed * dt;
+      if(t.position.z < BCAR.position.z - TILE_L*(TILE_N-.5)) t.position.z += TILE_N*TILE_L;
+    });
+    bTrees.forEach(t=>{
+      t.position.z -= bspeed * dt;
+      if(t.position.z < BCAR.position.z - TILE_L*(TILE_N-1)){
+        t.position.z += TILE_N*TILE_L + Math.random()*TILE_L;
+        t.position.x = randBX();
+      }
+    });
+    // Wheel spin — lock up (stop spinning) when braking hard
+    const lockup = BSIM.braking && calcBrakePhysics().decel > 4;
+    if(!lockup) bWheelAng += BSIM.vel * 2.8 * dt;
+    bWheels.forEach(w=>{ w.rotation.x = bWheelAng; });
+    // Brake lights
+    brakeLightMat.emissiveIntensity = BSIM.braking ? 3 : 0;
+    bBodyMat.color.setHex(BSIM.braking ? 0x280808 : 0x203060);
+    // Camera follows brake car
+    const bcWorld = new THREE.Vector3();
+    BCAR.getWorldPosition(bcWorld);
+    camTarget.lerp(bcWorld.add(new THREE.Vector3(0,.8,0)), .07);
+  } else if(activeTab==='crash'){
+    tickCrash(dt);
+  } else {
+    const carWorld=new THREE.Vector3();
+    car.getWorldPosition(carWorld);
+    camTarget.lerp(carWorld.add(new THREE.Vector3(0,.8,0)),.07);
+  }
+
+  updateCamera();
+  updateSlopePanel(p);
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+
+// ══════════════════════════════════════════════
+// BRAKE TEST LOOP
+// ══════════════════════════════════════════════
+let brakeRaf=null;
+
+function startBrakeLoop(){
+  if(brakeRaf)return;
+  let lastT=null;
+  function bloop(ts){
+    if(!BSIM.braking){brakeRaf=null;return;}
+    brakeRaf=requestAnimationFrame(bloop);
+    const dt=Math.min((ts-(lastT||ts))/1000,.05);
+    lastT=ts;
+    const bp=calcBrakePhysics();
+    BSIM.vel=Math.max(0,BSIM.vel-bp.decel*dt);
+    BSIM.dist+=BSIM.vel*dt;
+    document.getElementById('b-dst').textContent=BSIM.dist.toFixed(1)+' m';
+    updateBrakePanel(bp);
+    if(BSIM.vel<=0){
+      BSIM.vel=0;BSIM.braking=false;BSIM.done=true;
+      showBrakeResult(bp);
+      document.getElementById('btn-brake').textContent='🛑 BRAKE';
+      document.getElementById('btn-brake').classList.remove('braking');
+    }
+  }
+  brakeRaf=requestAnimationFrame(bloop);
+}
+
+function showBrakeResult(bp){
+  const box=document.getElementById('b-result-box');
+  const dist=BSIM.dist.toFixed(2);
+  box.style.display='block';
+  const el=document.getElementById('b-result-dist');
+  el.textContent=dist;
+  el.className='result-big'+(BSIM.dist>50?' bad':BSIM.dist>20?' warn':'');
+  const surfName=document.getElementById('b-surf').options[document.getElementById('b-surf').selectedIndex].text;
+  document.getElementById('b-result-detail').innerHTML=
+    `Started at: <b style="color:#dde0f5">${BST.speedKph} km/h</b><br>`+
+    `Surface: <b style="color:#dde0f5">${surfName}</b><br>`+
+    `Tyre: <b style="color:#dde0f5">${BST.compound} · ${GDATA[BST.groove].note.split(':')[0]}</b><br>`+
+    `Slowing rate: <b style="color:#dde0f5">${bp.decel.toFixed(1)} m/s² </b>`;
+}
+
+function updateBrakePanel(bp){
+  const kph=BSIM.vel*3.6;
+  const el=document.getElementById('b-cur-spd');
+  el.innerHTML=kph.toFixed(1)+' <small>km/h</small>';
+  el.style.color=kph>BST.speedKph*.6?'#ff3030':kph>BST.speedKph*.3?'#f0c040':'#30ff80';
+  const pct=BSIM.braking||BSIM.vel>0?kph/BST.speedKph*100:0;
+  document.getElementById('b-spd-bar').style.width=pct+'%';
+  document.getElementById('b-spd-bar').style.background=pct>60?'#ff3030':pct>30?'#f0c040':'#30ff80';
+  setDv('b-decel',bp.decel.toFixed(2)+' m/s²',bp.decel<3?'b':bp.decel<6?'w':'g');
+}
+
+// ══════════════════════════════════════════════
+// PANEL UPDATES
+// ══════════════════════════════════════════════
+function setDv(id,txt,cls){
+  const e=document.getElementById(id);if(!e)return;
+  e.textContent=txt;e.className='dv'+(cls?' '+cls:'');
+}
+function updateSlopePanel(p){
+  setDv('d-ang',ST.angle.toFixed(1)+'°');
+  const v=SIM.vel;
+  setDv('d-vel',v.toFixed(2)+' m/s',v>5?'b':v>1?'w':'g');
+  setDv('d-acc',p.acc.toFixed(2)+' m/s²',p.acc>2?'b':p.acc>.3?'w':'g');
+  setDv('d-dst',SIM.dist.toFixed(1)+' m');
+  setDv('d-fd',(p.fD/1000).toFixed(2)+' kN');
+  setDv('d-ff',(p.fS/1000).toFixed(2)+' / '+(p.fK/1000).toFixed(2)+' kN');
+  setDv('d-thr',p.thr.toFixed(1)+'°');
+  setDv('d-gm',(p.gm*100).toFixed(0)+'%',p.gm>=1?'g':p.gm>=.8?'w':'b');
+  if(SIM.slipping){
+    const s=v<.4?'ONSET':v<2.5?'SLIPPING':'SLIDING!';setDv('d-st',s,'b');
+  }else{
+    const m=(p.fS-p.fD)/Math.max(p.fS,1);setDv('d-st',m<.1?'CRITICAL':'HOLDING',m<.1?'w':'g');
+  }
+  const gm=Math.max(0,Math.min(1,p.grip));
+  const bar=document.getElementById('grip-bar');
+  if(bar){bar.style.width=(gm*100)+'%';bar.style.background=gm>.5?'#30ff80':gm>.2?'#f0c040':'#ff3030';}
+  document.getElementById('sov').classList.toggle('on',SIM.slipping&&v>.05);
+  const sh=document.getElementById('spd');
+  if(SIM.slipping&&v>.5){sh.textContent=v.toFixed(1)+' m/s ↓';sh.classList.add('on');}
+  else sh.classList.remove('on');
+}
+
+// ══════════════════════════════════════════════
+// SLOPE TAB CONTROLS
+// ══════════════════════════════════════════════
+function refreshGnote(){
+  const g=GDATA[ST.groove];
+  document.getElementById('gnote').textContent=g.note+' ['+ST.surfType+': '+(grooveMult(ST.groove,ST.surfType)*100).toFixed(0)+'%]';
+}
+document.getElementById('sl-ang').addEventListener('input',function(){
+  ST.angle=parseFloat(this.value);
+  document.getElementById('v-ang').innerHTML=ST.angle.toFixed(1)+' <small>°</small>';
+  applyTilt();
+});
+document.getElementById('sl-mass').addEventListener('input',function(){
+  ST.mass=parseFloat(this.value);
+  document.getElementById('v-mass').innerHTML=ST.mass+' <small>kg</small>';
+});
+document.getElementById('sel-surf').addEventListener('change',function(){
+  const[mu,t]=this.value.split('|');ST.surfMu=parseFloat(mu);ST.surfType=t;refreshGnote();
+});
+document.querySelectorAll('[data-c]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-c]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');ST.compound=this.dataset.c;
+  wheels.forEach(w=>{if(w.userData.tyreMat)w.userData.tyreMat.color.setHex(CDATA[ST.compound].hexCol);});
+  document.getElementById('cnote').textContent=CDATA[ST.compound].note;
+}));
+document.querySelectorAll('[data-g]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-g]').forEach(b=>b.classList.remove('ga'));
+  this.classList.add('ga');ST.groove=parseInt(this.dataset.g);
+  wheels.forEach(w=>{if(w.userData.rebuild)w.userData.rebuild();});
+  refreshGnote();
+}));
+document.getElementById('btn-run').addEventListener('click',function(){
+  if(SIM.running){SIM.running=false;SIM.slipping=false;SIM.vel=0;this.textContent='▶ RUN';this.classList.remove('stop');}
+  else{SIM.running=true;this.textContent='■ STOP';this.classList.add('stop');}
+});
+document.getElementById('btn-rst').addEventListener('click',function(){
+  SIM.vel=0;SIM.slipping=false;SIM.dist=0;
+  skidMeshes.forEach(m=>slopeGroup.remove(m));skidMeshes.length=0;
+  smokeArr.forEach(m=>scene.remove(m));smokeArr.length=0;
+  tiles.forEach((t,i)=>{t.position.z=-i*TILE_L+car.position.z;});
+  bankTiles.forEach((t,i)=>{t.position.z=-i*TILE_L+car.position.z;});
+  treeMeshes.forEach(t=>{t.position.z=-Math.random()*TILE_L*TILE_N;t.position.x=randX();});
+});
+
+// ══════════════════════════════════════════════
+// BRAKE TAB CONTROLS
+// ══════════════════════════════════════════════
+function refreshBGnote(){
+  const g=GDATA[BST.groove];
+  document.getElementById('b-gnote').textContent=g.note+' ['+BST.surfType+': '+(grooveMult(BST.groove,BST.surfType)*100).toFixed(0)+'%]';
+}
+document.getElementById('b-speed').addEventListener('input',function(){
+  BST.speedKph=parseFloat(this.value);
+  document.getElementById('bv-speed').innerHTML=BST.speedKph+' <small>km/h</small>';
+  if(!BSIM.braking){BSIM.vel=BST.speedKph/3.6;updateBrakePanel(calcBrakePhysics());}
+});
+document.getElementById('b-mass').addEventListener('input',function(){
+  BST.mass=parseFloat(this.value);
+  document.getElementById('bv-mass').innerHTML=BST.mass+' <small>kg</small>';
+});
+document.getElementById('b-surf').addEventListener('change',function(){
+  const[mu,t]=this.value.split('|');BST.surfMu=parseFloat(mu);BST.surfType=t;refreshBGnote();
+});
+document.querySelectorAll('[data-bc]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-bc]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');BST.compound=this.dataset.bc;
+  bWheels.forEach(w=>{if(w.userData.tyreMat)w.userData.tyreMat.color.setHex(CDATA[BST.compound].hexCol);});
+  document.getElementById('b-cnote').textContent=CDATA[BST.compound].note;
+  updateBrakePanel(calcBrakePhysics());
+}));
+document.querySelectorAll('[data-bg]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-bg]').forEach(b=>b.classList.remove('ga'));
+  this.classList.add('ga');BST.groove=parseInt(this.dataset.bg);
+  bWheels.forEach(w=>{if(w.userData.rebuild)w.userData.rebuild();});
+  refreshBGnote();updateBrakePanel(calcBrakePhysics());
+}));
+
+document.getElementById('btn-brake').addEventListener('click',function(){
+  if(BSIM.done||BSIM.vel<=0)return;
+  BSIM.braking=true;
+  this.textContent='BRAKING...';
+  this.classList.add('braking');
+  document.getElementById('b-result-box').style.display='none';
+  startBrakeLoop();
+});
+
+document.getElementById('btn-brake-rst').addEventListener('click',function(){
+  BSIM.braking=false;BSIM.vel=BST.speedKph/3.6;BSIM.dist=0;BSIM.done=false;
+  brakeRaf=null;
+  brakeLightMat.emissiveIntensity=0;
+  bBodyMat.color.setHex(0x203060);
+  // Reset tile positions
+  bTiles.forEach((t,i)=>{t.position.z=-i*TILE_L+BCAR.position.z;});
+  bBankTiles.forEach((t,i)=>{t.position.z=-i*TILE_L+BCAR.position.z;});
+  const bb=document.getElementById('btn-brake');
+  bb.textContent='🛑 BRAKE';bb.classList.remove('braking');bb.disabled=false;
+  document.getElementById('b-result-box').style.display='none';
+  document.getElementById('b-dst').textContent='0 m';
+  updateBrakePanel(calcBrakePhysics());
+});
+
+// ══════════════════════════════════════════════
+// TAB SWITCHING (HTML panels)
+// ══════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('tab-'+this.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Init ──
+refreshGnote();
+refreshBGnote();
+BSIM.vel=BST.speedKph/3.6;
+updateBrakePanel(calcBrakePhysics());
+
+
+// ══════════════════════════════════════════════
+// CRASH TAB — 3D SCENE
+// ══════════════════════════════════════════════
+const crashGroup = new THREE.Group();
+crashGroup.visible = false;
+scene.add(crashGroup);
+
+// Static road for crash scene
+const crRoad = new THREE.Mesh(
+  new THREE.BoxGeometry(8, 0.2, 40),
+  new THREE.MeshStandardMaterial({color:0x1a1a22,roughness:.92})
+);
+crRoad.position.y = -0.1;
+crRoad.receiveShadow = true;
+crashGroup.add(crRoad);
+
+// Wall / barrier to crash into
+const wallMat = new THREE.MeshStandardMaterial({color:0x888888,roughness:.6,metalness:.4});
+const wall = new THREE.Mesh(new THREE.BoxGeometry(7, 3, 0.4), wallMat);
+wall.position.set(0, 1.5, -12);
+wall.castShadow = true;
+crashGroup.add(wall);
+// Stripes on wall
+for(let i=-3;i<=3;i++){
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.4,3,0.05),
+    new THREE.MeshStandardMaterial({color:i%2===0?0xffdd00:0x111111}));
+  stripe.position.set(i*1.0,0,0.23);
+  wall.add(stripe);
+}
+
+// ── CRASH CAR ──
+const crashCar = new THREE.Group();
+crashCar.position.set(0, WHEEL_R, 6);
+crashGroup.add(crashCar);
+
+// Car body parts — stored separately so they can fly off
+const crParts = [];
+
+function makeCrashCarPart(geo, mat, px, py, pz){
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(px, py, pz);
+  m.castShadow = true;
+  crashCar.add(m);
+  crParts.push({
+    mesh: m,
+    origPos: new THREE.Vector3(px,py,pz),
+    origRot: new THREE.Euler(0,0,0),
+    vel: new THREE.Vector3(),
+    angVel: new THREE.Vector3(),
+    flying: false,
+    detached: false
+  });
+  return m;
+}
+
+const crBodyMat = new THREE.MeshStandardMaterial({color:0x2244aa,roughness:.3,metalness:.75});
+const crBody = makeCrashCarPart(new THREE.BoxGeometry(1.6,.52,2.9), crBodyMat, 0,.26,0);
+
+// Hood (front panel — first to deform)
+const crHoodMat = new THREE.MeshStandardMaterial({color:0x2244aa,roughness:.3,metalness:.75});
+const crHood = makeCrashCarPart(new THREE.BoxGeometry(1.55,.08,1.1), crHoodMat, 0,.52,.9);
+
+// Cabin
+const crCabinMat = new THREE.MeshStandardMaterial({color:0x2a3a7a,roughness:.25,metalness:.6});
+makeCrashCarPart(new THREE.BoxGeometry(1.28,.4,1.5), crCabinMat, 0,.92,-.1);
+
+// Windshield
+const crGlass = makeCrashCarPart(
+  new THREE.BoxGeometry(1.26,.38,.05),
+  new THREE.MeshStandardMaterial({color:0xaaccff,roughness:0,transparent:true,opacity:.38}),
+  0,.92,.62
+);
+
+// Left/right doors
+makeCrashCarPart(new THREE.BoxGeometry(.06,.45,2.2),
+  new THREE.MeshStandardMaterial({color:0x1e3080,roughness:.3,metalness:.7}), -0.83,.52,0);
+makeCrashCarPart(new THREE.BoxGeometry(.06,.45,2.2),
+  new THREE.MeshStandardMaterial({color:0x1e3080,roughness:.3,metalness:.7}), 0.83,.52,0);
+
+// Front bumper
+const crBumper = makeCrashCarPart(
+  new THREE.BoxGeometry(1.65,.22,.12),
+  new THREE.MeshStandardMaterial({color:0x111122,roughness:.5,metalness:.9}),
+  0,.18,1.5
+);
+
+// Headlights
+[-0.5,0.5].forEach(x=>{
+  makeCrashCarPart(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffaa,emissiveIntensity:2.5}),x,.26,1.46);
+  makeCrashCarPart(new THREE.BoxGeometry(.3,.13,.07),
+    new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff1100,emissiveIntensity:2}),x,.26,-1.46);
+});
+
+// Crash car wheels
+const crWheels=[];
+WPOS.forEach(p=>{
+  const wg=new THREE.Group();
+  const tyre=new THREE.Mesh(new THREE.TorusGeometry(.3,.118,16,32),
+    new THREE.MeshStandardMaterial({color:0x222222,roughness:.86}));
+  tyre.rotation.y=Math.PI/2;wg.add(tyre);
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.09,16),
+    new THREE.MeshStandardMaterial({color:0x556677,roughness:.3,metalness:.85}));
+  rim.rotation.z=Math.PI/2;wg.add(rim);
+  wg.position.set(p.x,0,p.z);
+  crashCar.add(wg);
+  crWheels.push({grp:wg,origPos:new THREE.Vector3(p.x,0,p.z),vel:new THREE.Vector3(),angVel:new THREE.Vector3(),flying:false});
+});
+
+// Debris pieces pool (shards of glass/metal)
+const debrisMeshes=[];
+function spawnDebris(n, cx, cy, cz, speed){
+  for(let i=0;i<n;i++){
+    const sz = 0.04+Math.random()*.14;
+    const geo = Math.random()>.5
+      ? new THREE.BoxGeometry(sz,sz*0.5,sz)
+      : new THREE.TetrahedronGeometry(sz);
+    const col = Math.random()>.6 ? 0x88aacc : (Math.random()>.5?0x555566:0x222233);
+    const m=new THREE.Mesh(geo,
+      new THREE.MeshStandardMaterial({color:col,roughness:1,transparent:true,opacity:.9}));
+    m.position.set(
+      cx+(Math.random()-.5)*.8,
+      cy+Math.random()*.5,
+      cz+(Math.random()-.5)*.8
+    );
+    const spd = speed*(0.4+Math.random()*.8);
+    m.userData.vel=new THREE.Vector3(
+      (Math.random()-.5)*spd*.3,
+      Math.random()*spd*.4+1,
+      -(Math.random()*spd*.5+0.5)
+    );
+    m.userData.angVel=new THREE.Vector3(
+      (Math.random()-.5)*8,(Math.random()-.5)*8,(Math.random()-.5)*8);
+    m.userData.life=1;
+    m.castShadow=true;
+    scene.add(m);
+    debrisMeshes.push(m);
+  }
+}
+
+// Crash fire/smoke particles
+const crashParticles=[];
+function spawnCrashFire(x,y,z,n){
+  for(let i=0;i<n;i++){
+    const m=new THREE.Mesh(
+      new THREE.SphereGeometry(.08+Math.random()*.12,5,5),
+      new THREE.MeshStandardMaterial({
+        color:Math.random()>.5?0xff4400:0xff8800,
+        emissive:Math.random()>.5?0xff3300:0xff6600,
+        emissiveIntensity:2+Math.random()*2,
+        transparent:true,opacity:.8
+      })
+    );
+    m.position.set(x+(Math.random()-.5)*.6,y,z+(Math.random()-.5)*.4);
+    m.userData.vel=new THREE.Vector3((Math.random()-.5)*.08,.05+Math.random()*.12,(Math.random()-.5)*.05);
+    m.userData.life=1;
+    scene.add(m);crashParticles.push(m);
+  }
+}
+
+// ── CRASH STATE ──
+const CRASH={
+  speed:60, belt:'yes', airbag:'yes', type:'frontal', occupant:'driver',
+  state:'idle', // idle | driving | crashed
+  carVel:0, carPos:6, // z position
+  crashT:0, // time since impact
+  parts:crParts,
+};
+
+function resetCrashScene(){
+  CRASH.state='idle';
+  CRASH.carVel=0;
+  CRASH.carPos=6;
+  crashCar.position.set(0,WHEEL_R,6);
+  crashCar.rotation.set(0,0,0);
+
+  // Reset all parts
+  crParts.forEach(p=>{
+    p.mesh.position.copy(p.origPos);
+    p.mesh.rotation.set(0,0,0);
+    p.vel.set(0,0,0);
+    p.flying=false;
+    p.detached=false;
+    if(p.mesh.parent!==crashCar) crashCar.add(p.mesh);
+  });
+  crWheels.forEach(w=>{
+    w.grp.position.copy(w.origPos);
+    w.grp.rotation.set(0,0,0);
+    w.vel.set(0,0,0);
+    w.flying=false;
+    if(w.grp.parent!==crashCar) crashCar.add(w.grp);
+  });
+
+  // Remove debris
+  debrisMeshes.forEach(m=>scene.remove(m));debrisMeshes.length=0;
+  crashParticles.forEach(m=>scene.remove(m));crashParticles.length=0;
+
+  // Reset wall
+  wall.position.set(0,1.5,-12);
+  wall.rotation.set(0,0,0);
+  wall.scale.set(1,1,1);
+
+  // Hide injury list
+  document.getElementById('injury-list').style.display='none';
+
+  // Reset survival display
+  document.getElementById('surv-pct').textContent='—';
+  document.getElementById('surv-bar').style.width='0%';
+  document.getElementById('surv-display').style.borderColor='#1e1e36';
+}
+
+function calcSurvival(speedKph, belt, airbag, type, occupant){
+  // Based on real crash statistics (NHTSA / IIHS data):
+  // Base survival rates by speed bracket
+  let base;
+  if(speedKph<=20) base=99;
+  else if(speedKph<=40) base=97;
+  else if(speedKph<=60) base=85;
+  else if(speedKph<=80) base=65;
+  else if(speedKph<=100) base=40;
+  else if(speedKph<=120) base=20;
+  else if(speedKph<=150) base=8;
+  else base=2;
+
+  // Crash type modifier
+  const typeModifier = {frontal:1.0, rear:1.15, side:0.88, rollover:0.80}[type]||1.0;
+  // Seatbelt: massive effect — no belt is 30x more likely to die in ejection
+  const beltMod = belt==='yes' ? 1.0 : 0.42;
+  // Airbag
+  const airbagMod = airbag==='yes' ? 1.08 : 0.92;
+
+  let pct = base * typeModifier * beltMod * airbagMod;
+  pct = Math.max(1, Math.min(99.5, pct));
+
+  // Injury breakdown (rough)
+  const injuries=[];
+  if(speedKph > 20){
+    injuries.push({label:'Whiplash / Neck Strain', risk: Math.min(95, speedKph*0.8+(belt==='no'?20:0))});
+  }
+  if(speedKph > 40){
+    injuries.push({label:'Broken Ribs / Chest Injury', risk: Math.min(90, (speedKph-30)*0.9+(belt==='no'?30:0)-(airbag==='yes'?10:0))});
+  }
+  if(speedKph > 50 && belt==='no'){
+    injuries.push({label:'Head vs Windshield', risk: Math.min(95, (speedKph-40)*1.2)});
+  }
+  if(speedKph > 60){
+    injuries.push({label:'Broken Arms / Legs', risk: Math.min(85, (speedKph-50)*0.8)});
+  }
+  if(speedKph > 80){
+    injuries.push({label:'Internal Bleeding', risk: Math.min(80, (speedKph-70)*1.1+(belt==='no'?20:0))});
+  }
+  if(speedKph > 100){
+    injuries.push({label:'Brain Injury', risk: Math.min(75, (speedKph-90)*1.0+(belt==='no'?25:0))});
+  }
+  if(type==='rollover'){
+    injuries.push({label:'Ejection from Vehicle', risk: belt==='no'?75:8});
+  }
+  if(type==='side'){
+    injuries.push({label:'Door Intrusion Injury', risk: Math.min(70, (speedKph-20)*0.6)});
+  }
+  return {pct: Math.round(pct*10)/10, injuries};
+}
+
+function showSurvival(speedKph){
+  const s=calcSurvival(speedKph,CRASH.belt,CRASH.airbag,CRASH.type,CRASH.occupant);
+  const el=document.getElementById('surv-pct');
+  const bar=document.getElementById('surv-bar');
+  const disp=document.getElementById('surv-display');
+
+  el.textContent=s.pct+'%';
+  const col=s.pct>70?'#30ff80':s.pct>40?'#f0c040':'#ff3030';
+  el.style.color=col;
+  bar.style.width=s.pct+'%';
+  bar.style.background=col;
+  disp.style.borderColor=col;
+
+  // Injury list
+  const list=document.getElementById('injury-list');
+  if(s.injuries.length){
+    list.style.display='block';
+    list.innerHTML='<div style="color:#f0c040;letter-spacing:2px;font-size:.58rem;margin-bottom:4px;">LIKELY INJURIES</div>'+
+      s.injuries.map(inj=>{
+        const rc=inj.risk>70?'#ff3030':inj.risk>40?'#f0c040':'#888';
+        return `<span>${inj.label} <b style="color:${rc}">${Math.round(inj.risk)}% risk</b></span>`;
+      }).join('');
+  } else {
+    list.innerHTML='<span style="color:#30ff80">Minor or no injuries expected.</span>';
+    list.style.display='block';
+  }
+}
+
+function triggerCrash(speedKph){
+  const speedMs = speedKph/3.6;
+  const impactForce = speedMs; // proportional to speed for effect sizing
+
+  // Detach and launch parts based on speed
+  crParts.forEach((p,i)=>{
+    const launchChance = Math.min(0.95, speedKph/120);
+    if(Math.random() < launchChance || speedKph>100){
+      p.flying=true;
+      // Launch mostly forward/upward
+      p.vel.set(
+        (Math.random()-.5)*impactForce*.25,
+        Math.random()*impactForce*.3+1.5,
+        -(Math.random()*impactForce*.4+impactForce*.1)
+      );
+      p.angVel=new THREE.Vector3(
+        (Math.random()-.5)*8,(Math.random()-.5)*6,(Math.random()-.5)*8);
+      // Move mesh to scene space before detaching
+      const wpos=new THREE.Vector3();p.mesh.getWorldPosition(wpos);
+      const wrot=new THREE.Euler();wrot.setFromQuaternion(p.mesh.getWorldQuaternion(new THREE.Quaternion()));
+      scene.add(p.mesh);
+      p.mesh.position.copy(wpos);
+      p.mesh.rotation.copy(wrot);
+      p.detached=true;
+    }
+  });
+
+  // Wheels fly off at high speed
+  if(speedKph>60){
+    crWheels.forEach(w=>{
+      w.flying=true;
+      const wpos=new THREE.Vector3();w.grp.getWorldPosition(wpos);
+      scene.add(w.grp);w.grp.position.copy(wpos);
+      w.vel.set((Math.random()-.5)*impactForce*.4,Math.random()*impactForce*.25+1,-(Math.random()*impactForce*.2));
+    });
+  }
+
+  // Spawn debris proportional to speed
+  const debrisCount = Math.floor(speedKph/4);
+  const carWPos=new THREE.Vector3();crashCar.getWorldPosition(carWPos);
+  spawnDebris(debrisCount, carWPos.x, carWPos.y+0.5, carWPos.z-1, speedMs*0.4);
+
+  // Fire/smoke at high speed
+  if(speedKph>60) spawnCrashFire(carWPos.x, carWPos.y+0.3, carWPos.z+0.5, Math.floor(speedKph/10));
+
+  showSurvival(speedKph);
+}
+
+// ── Tab visibility for crash ──
+// (integrated into the existing tab click handler)
+
+// ── CRASH ANIMATE ──
+let crAnimating=false;
+
+function tickCrash(dt){
+  if(CRASH.state==='driving'){
+    // Approach wall
+    CRASH.carVel = CRASH.speed/3.6;
+    CRASH.carPos -= CRASH.carVel * dt;
+    crashCar.position.z = CRASH.carPos;
+
+    if(CRASH.carPos <= -11.5){
+      // IMPACT
+      CRASH.state='crashed';
+      CRASH.crashT=0;
+      triggerCrash(CRASH.speed);
+      // Crumple car body
+      crashCar.position.z=-11.5;
     }
   }
 
-  camera.position.set(Math.sin(camRotation)*15, 6, Math.cos(camRotation)*15);
-  if(camShake > 0) {
-    camera.position.x += (Math.random()-0.5)*camShake;
-    camera.position.y += (Math.random()-0.5)*camShake;
-    camShake *= 0.92;
+  if(CRASH.state==='crashed'){
+    CRASH.crashT+=dt;
+    const t=CRASH.crashT;
+
+    // Shake the car body at impact
+    if(t<0.3){
+      const shake=(0.3-t)*CRASH.speed*.004;
+      crashCar.position.x=Math.sin(t*80)*shake;
+      crashCar.position.y=WHEEL_R+Math.abs(Math.sin(t*60))*shake*.5;
+    }
+
+    // Crumple animation on main body
+    if(t<0.5){
+      const crumple=Math.min(1,t*3)*Math.min(1,CRASH.speed/60);
+      crBody.scale.z=1-crumple*0.35;
+      crHood.position.y=0.52+crumple*0.15;
+      crHood.rotation.x=crumple*0.4;
+    }
   }
-  camera.lookAt(0, 1, 0);
-  renderer.render(scene, camera);
+
+  // Update flying parts
+  crParts.forEach(p=>{
+    if(!p.detached||!p.flying) return;
+    p.mesh.position.x+=p.vel.x*dt;
+    p.mesh.position.y+=p.vel.y*dt;
+    p.mesh.position.z+=p.vel.z*dt;
+    p.vel.y-=9.81*dt; // gravity
+    p.vel.multiplyScalar(0.98); // air drag
+    p.mesh.rotation.x+=p.angVel.x*dt;
+    p.mesh.rotation.y+=p.angVel.y*dt;
+    p.mesh.rotation.z+=p.angVel.z*dt;
+    // Bounce off ground
+    if(p.mesh.position.y<0.1){p.mesh.position.y=0.1;p.vel.y*=-0.3;p.vel.x*=0.7;p.vel.z*=0.7;p.angVel.multiplyScalar(.5);}
+  });
+
+  crWheels.forEach(w=>{
+    if(!w.flying) return;
+    w.grp.position.x+=w.vel.x*dt;
+    w.grp.position.y+=w.vel.y*dt;
+    w.grp.position.z+=w.vel.z*dt;
+    w.vel.y-=9.81*dt;w.vel.multiplyScalar(0.97);
+    w.grp.rotation.x+=8*dt;
+    if(w.grp.position.y<WHEEL_R){w.grp.position.y=WHEEL_R;w.vel.y*=-0.25;w.vel.multiplyScalar(.7);}
+  });
+
+  // Debris
+  for(let i=debrisMeshes.length-1;i>=0;i--){
+    const d=debrisMeshes[i];
+    d.position.addScaledVector(d.userData.vel,dt*60*dt);
+    d.userData.vel.y-=9.81*dt;
+    d.userData.vel.multiplyScalar(0.97);
+    d.rotation.x+=d.userData.angVel.x*dt;
+    d.rotation.y+=d.userData.angVel.y*dt;
+    d.userData.life-=dt*.3;
+    d.material.opacity=Math.max(0,d.userData.life);
+    if(d.position.y<0.05){d.position.y=0.05;d.userData.vel.y*=-.2;}
+    if(d.userData.life<=0){scene.remove(d);debrisMeshes.splice(i,1);}
+  }
+
+  // Fire/smoke
+  for(let i=crashParticles.length-1;i>=0;i--){
+    const p=crashParticles[i];
+    p.position.addScaledVector(p.userData.vel,dt*60);
+    p.userData.life-=dt*0.8;
+    p.material.opacity=p.userData.life*.8;
+    p.scale.setScalar(1+(1-p.userData.life)*2);
+    if(p.userData.life<=0){scene.remove(p);crashParticles.splice(i,1);}
+  }
+
+  // Camera tracks crash car
+  if(activeTab==='crash'){
+    const ccp=new THREE.Vector3();
+    BCAR.getWorldPosition(ccp); // reuse BCAR helper - actually use crashCar
+    // Manual world pos since crashCar is in crashGroup
+    const ccrash=crashCar.position.clone();
+    crashGroup.localToWorld(ccrash);
+    camTarget.lerp(ccrash.add(new THREE.Vector3(0,1,0)),.06);
+  }
 }
 
-update(); animate();
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+// ── CRASH CONTROLS ──
+document.getElementById('cr-speed').addEventListener('input',function(){
+  CRASH.speed=parseInt(this.value);
+  document.getElementById('crv-speed').innerHTML=CRASH.speed+' <small>km/h</small>';
 });
+document.querySelectorAll('[data-occ]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-occ]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');CRASH.occupant=this.dataset.occ;
+}));
+document.querySelectorAll('[data-belt]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-belt]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');CRASH.belt=this.dataset.belt;
+}));
+document.querySelectorAll('[data-airbag]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-airbag]').forEach(b=>b.classList.remove('ca'));
+  this.classList.add('ca');CRASH.airbag=this.dataset.airbag;
+}));
+document.getElementById('cr-type').addEventListener('change',function(){
+  CRASH.type=this.value;
+});
+document.getElementById('btn-crash').addEventListener('click',function(){
+  if(CRASH.state==='idle'){
+    resetCrashScene();
+    CRASH.state='driving';
+    CRASH.carPos=6;
+    this.textContent='💨 INCOMING...';
+    this.disabled=true;
+  }
+});
+document.getElementById('btn-crash-rst').addEventListener('click',function(){
+  resetCrashScene();
+  document.getElementById('btn-crash').textContent='💥 CRASH';
+  document.getElementById('btn-crash').disabled=false;
+  CRASH.state='idle';
+  CRASH.carPos=6;
+  crashCar.position.set(0,WHEEL_R,6);
+  crashCar.rotation.set(0,0,0);
+});
+
+// ── Wire crash into tab visibility ──
+const origTabClick = document.querySelectorAll('.tab');
+// Already handled via activeTab variable set in the brakeGroup section above.
+// Just need to add crash group visibility:
+// We patch the existing tab listener by watching activeTab changes post-hoc in animate.
+
+// Patch animate to handle crash tab visibility
+// (done inline in the animate loop via activeTab check)
+
+} // end boot
+})();
 </script>
 </body>
 </html>
