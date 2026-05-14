@@ -1,937 +1,638 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOUND WAVE SIM v0.1 (DO NOT DISTRIBUTE)</title>
+    <title>2D Sound Wave Simulation</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #000080;
-            overflow: hidden;
-            font-family: "Comic Sans MS", "MS Sans Serif", cursive, sans-serif;
+        body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; }
+        
+        .container { display: flex; height: 100vh; }
+        
+        .sidebar {
+            width: 260px;
+            background: #16213e;
+            padding: 15px;
+            overflow-y: auto;
+            border-right: 2px solid #0f3460;
+            flex-shrink: 0;
+        }
+        
+        .main { flex: 1; display: flex; flex-direction: column; }
+        
+        canvas {
+            display: block;
+            background: #0a0a1a;
             cursor: crosshair;
         }
-        canvas { display: block; }
-
-        marquee {
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            background: #ff0000;
-            color: #ffff00;
-            font-size: 14px;
-            font-weight: bold;
-            padding: 2px 0;
-            z-index: 100;
-            font-family: "Comic Sans MS", cursive;
-        }
-
-        #ui {
-            position: absolute;
-            top: 28px;
-            left: 8px;
-            color: #00ff00;
-            background: #000033;
-            padding: 8px;
-            border: 3px ridge #8888ff;
-            width: 240px;
-            box-shadow: 4px 4px 0px #000;
-        }
-        #ui h3 {
-            margin-bottom: 6px;
-            color: #ff00ff;
-            font-size: 15px;
-            text-decoration: underline;
-            text-shadow: 2px 2px #000;
-            letter-spacing: 1px;
-        }
-        .control {
-            margin: 6px 0;
-            font-size: 11px;
-            background: #110022;
-            padding: 4px;
-            border: 1px dashed #666;
-        }
-        .control label {
-            display: block;
-            margin-bottom: 2px;
-            color: #00ffff;
-            font-size: 10px;
-        }
-        .control input[type=range] {
-            width: 100%;
-            accent-color: #ff00ff;
-        }
-        .val { color: #ffff00; float: right; font-size: 10px; }
-        .btn {
-            display: inline-block;
-            margin: 2px;
-            padding: 4px 7px;
-            background: #990000;
-            color: #ffff00;
-            border: 2px outset #ff6666;
-            cursor: pointer;
-            font-size: 10px;
-            font-family: "Comic Sans MS", cursive;
-            font-weight: bold;
-        }
-        .btn:hover { background: #cc0000; }
-        .btn.active { background: #009900; border-color: #00ff00; }
-
-        #stats {
-            position: absolute;
-            top: 28px;
-            right: 8px;
-            color: #00ff00;
-            background: #000033;
-            padding: 8px;
-            border: 3px ridge #8888ff;
-            width: 220px;
-            box-shadow: 4px 4px 0px #000;
-        }
-        #stats h3 { color: #ffff00; margin-bottom: 6px; font-size: 13px; text-decoration: underline blink; }
-        .stat-row {
+        
+        .info-bar {
+            background: #16213e;
+            padding: 8px 15px;
+            font-size: 13px;
+            border-top: 1px solid #0f3460;
             display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-            font-size: 10px;
-            border-bottom: 1px dotted #333366;
-            padding-bottom: 3px;
+            gap: 20px;
+            flex-wrap: wrap;
         }
-        .stat-label { color: #aaaaff; }
-        .stat-val { color: #00ff00; font-weight: bold; }
-        .stat-val.warn { color: #ff8800; }
-        .stat-val.danger { color: #ff0000; animation: blinker 0.5s linear infinite; }
 
-        @keyframes blinker { 50% { opacity: 0; } }
+        h2 { color: #e94560; margin-bottom: 15px; font-size: 16px; }
+        h3 { color: #0f9b8e; margin: 12px 0 8px; font-size: 13px; text-transform: uppercase; }
 
-        #db-meter { margin-top: 8px; }
-        #db-meter label { color: #ff00ff; font-size: 10px; display: block; margin-bottom: 3px; }
-        #db-bar-bg {
+        .btn {
             width: 100%;
-            height: 16px;
-            background: #110011;
-            border: 2px inset #666;
+            padding: 8px;
+            margin: 3px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+
+        .btn-source { background: #e94560; color: white; }
+        .btn-wall   { background: #4a90d9; color: white; }
+        .btn-trees  { background: #27ae60; color: white; }
+        .btn-absorb { background: #8e44ad; color: white; }
+        .btn-clear  { background: #e67e22; color: white; }
+        .btn-reset  { background: #555; color: white; }
+
+        .btn.active { box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.03); }
+
+        label { font-size: 12px; color: #aaa; display: block; margin-top: 8px; }
+        input[type=range] { width: 100%; margin: 4px 0; accent-color: #e94560; }
+        
+        .value-display {
+            display: flex; justify-content: space-between;
+            font-size: 11px; color: #7f8c8d;
+        }
+
+        .legend { margin-top: 15px; }
+        .legend-item {
+            display: flex; align-items: center;
+            gap: 8px; margin: 4px 0; font-size: 12px;
+        }
+        .legend-dot {
+            width: 14px; height: 14px;
+            border-radius: 3px; flex-shrink: 0;
+        }
+
+        .db-meter {
+            background: #0a0a1a;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 10px;
+        }
+        .db-bar-bg {
+            background: #222;
+            border-radius: 4px;
+            height: 12px;
+            margin: 4px 0;
             overflow: hidden;
         }
-        #db-bar {
+        .db-bar {
             height: 100%;
-            width: 0%;
+            border-radius: 4px;
             transition: width 0.1s;
-            background: repeating-linear-gradient(45deg, #00ff00, #00ff00 4px, #008800 4px, #008800 8px);
         }
+        .db-label { font-size: 11px; color: #aaa; display: flex; justify-content: space-between; }
 
-        #house-panel {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            color: #ff8800;
-            background: #000033;
+        .tip {
+            background: #0f3460;
+            border-radius: 6px;
             padding: 8px;
-            border: 3px ridge #8888ff;
-            width: 220px;
-            box-shadow: 4px 4px 0px #000;
-            font-size: 10px;
-        }
-        #house-panel h3 { color: #ff00ff; margin-bottom: 6px; font-size: 13px; }
-        .house-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-            font-size: 10px;
-        }
-        .house-label { color: #aaaaff; }
-        .house-val { font-weight: bold; }
-        #house-desc {
-            margin-top: 6px;
-            padding: 4px;
-            background: #110022;
-            border: 1px dotted #444;
-            font-size: 9px;
-            color: #aaaaff;
-            line-height: 1.4;
-        }
-
-        #legend {
-            position: absolute;
-            bottom: 8px;
-            left: 8px;
-            color: #00ff00;
-            background: #000033;
-            padding: 6px;
-            border: 3px ridge #8888ff;
-            font-size: 9px;
-            box-shadow: 4px 4px 0px #000;
-        }
-        .leg-item { display: flex; align-items: center; margin: 2px 0; }
-        .leg-color { width: 10px; height: 10px; border: 1px solid #fff; margin-right: 5px; flex-shrink: 0; }
-
-        #footer {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ffff00;
-            background: #990000;
-            padding: 2px 12px;
-            font-size: 9px;
-            border: 2px outset #ff6666;
-            font-family: "Comic Sans MS", cursive;
-        }
-
-        #visitor-counter {
-            position: absolute;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #fff;
-            background: #000;
-            padding: 2px 8px;
-            font-size: 9px;
-            border: 1px solid #333;
-            font-family: "Courier New", monospace;
-        }
-
-        .hit-counter {
-            display: inline-block;
-            background: #111;
-            color: #0f0;
-            padding: 1px 3px;
-            font-family: "Courier New", monospace;
-            font-size: 10px;
-            border: 1px inset #444;
-        }
-
-        /* guestbook popup */
-        #guestbook {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #c0c0c0;
-            border: 3px outset #ddd;
-            padding: 0;
-            z-index: 200;
-            width: 300px;
-            font-family: "MS Sans Serif", sans-serif;
             font-size: 11px;
-            box-shadow: 6px 6px 0 #000;
+            color: #aaa;
+            margin-top: 10px;
+            line-height: 1.5;
         }
-        #gb-titlebar {
-            background: linear-gradient(90deg, #000080, #1084d0);
-            color: white;
-            padding: 3px 5px;
-            font-size: 11px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #gb-close {
-            background: #c0c0c0;
-            border: 2px outset #ddd;
-            color: #000;
-            font-size: 10px;
-            cursor: pointer;
-            padding: 0 5px;
-            font-weight: bold;
-        }
-        #gb-body { padding: 12px; color: #000; }
-        #gb-body p { margin: 8px 0; }
-        #gb-body input, #gb-body textarea {
-            border: 2px inset #888;
-            padding: 2px;
-            font-family: "MS Sans Serif", sans-serif;
-            font-size: 11px;
+
+        select {
             width: 100%;
-            background: #fff;
-        }
-        #gb-ok {
-            background: #c0c0c0;
-            border: 2px outset #ddd;
-            padding: 3px 16px;
-            cursor: pointer;
-            font-size: 11px;
-            margin-top: 8px;
-        }
-
-        .construction-gif {
-            display: inline-block;
-            animation: spin 2s linear infinite;
-            font-size: 14px;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        #under-construction {
-            position: absolute;
-            top: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ffff00;
-            font-size: 11px;
-            text-align: center;
-            text-shadow: 1px 1px #f00;
-            pointer-events: none;
-            opacity: 0.8;
+            background: #0f3460;
+            color: #eee;
+            border: 1px solid #4a90d9;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 12px;
+            margin: 4px 0;
         }
     </style>
 </head>
 <body>
+<div class="container">
+    <div class="sidebar">
+        <h2>🔊 Sound Wave Sim</h2>
 
-<marquee scrollamount="3">★★★ WELCOME 2 MY SOUND WAVE SIMULATION !! PLZ DO NOT STEAL ★★★ THIS IS ORIGINAL CONTENT MADE BY ME ★★★ NEW FEATURES COMING SOON (MAYBE) ★★★</marquee>
+        <h3>🛠 Tools</h3>
+        <button class="btn btn-source active" id="btn-source" onclick="setTool('source')">📡 Add Source</button>
+        <button class="btn btn-wall"   id="btn-wall"   onclick="setTool('wall')">🧱 Draw Wall</button>
+        <button class="btn btn-trees"  id="btn-trees"  onclick="setTool('trees')">🌲 Plant Trees</button>
+        <button class="btn btn-absorb" id="btn-absorb" onclick="setTool('absorb')">🟣 Absorber</button>
+        <button class="btn btn-clear"  id="btn-clear"  onclick="setTool('erase')">🗑 Eraser</button>
 
-<div id="under-construction">
-    <span class="construction-gif">🚧</span>
-    UNDER CONSTRUCTION
-    <span class="construction-gif">🚧</span>
-</div>
+        <h3>⚙ Source Settings</h3>
+        <label>Frequency</label>
+        <input type="range" id="freq" min="1" max="20" value="5" oninput="updateSettings()">
+        <div class="value-display"><span>Low</span><span id="freq-val">5</span><span>High</span></div>
 
-<div id="ui">
-    <h3>🔊 SOUND WAVE SIM v0.1</h3>
-    <div style="font-size:9px; color:#ff8800; margin-bottom:4px;">(still working on it lol)</div>
+        <label>Amplitude</label>
+        <input type="range" id="amp" min="10" max="100" value="60" oninput="updateSettings()">
+        <div class="value-display"><span>Quiet</span><span id="amp-val">60</span><span>Loud</span></div>
 
-    <div class="control">
-        <label>🎧 Source dB Level <span class="val" id="db-src-label">80 dB</span></label>
-        <input type="range" id="src-db" min="40" max="140" step="1" value="80">
-    </div>
-    <div class="control">
-        <label>〰️ Frequency <span class="val" id="freq-label">2 Hz</span></label>
-        <input type="range" id="freq" min="1" max="5" step="0.5" value="2">
-    </div>
-    <div class="control">
-        <label>💨 Speed <span class="val" id="speed-label">1.5x</span></label>
-        <input type="range" id="speed" min="0.5" max="3" step="0.5" value="1.5">
-    </div>
-    <div class="control">
-        <label>🧽 Absorption <span class="val" id="absorb-label">0.05</span></label>
-        <input type="range" id="absorb" min="0.01" max="0.15" step="0.01" value="0.05">
-    </div>
-    <div class="control">
-        <label>📏 Distance 2 House <span class="val" id="dist-label">20 m</span></label>
-        <input type="range" id="dist" min="5" max="50" step="1" value="20">
-    </div>
-    <div class="control">
-        <label>🧱 Wall Thickness <span class="val" id="wall-label">20 cm</span></label>
-        <input type="range" id="wall-thick" min="5" max="60" step="5" value="20">
+        <label>Wave Speed</label>
+        <input type="range" id="speed" min="1" max="8" value="3" oninput="updateSettings()">
+        <div class="value-display"><span>Slow</span><span id="speed-val">3</span><span>Fast</span></div>
+
+        <h3>🌍 Scenario</h3>
+        <select id="scenario" onchange="loadScenario()">
+            <option value="">-- Load Preset --</option>
+            <option value="highway">🚗 Highway + Wall</option>
+            <option value="forest">🌲 Forest Belt</option>
+            <option value="building">🏢 Building Reflection</option>
+            <option value="barrier">🎵 Angled Barrier</option>
+        </select>
+
+        <h3>📊 Noise Level</h3>
+        <div class="db-meter">
+            <div class="db-label"><span>🔴 Near Source</span><span id="db-source">-- dB</span></div>
+            <div class="db-bar-bg"><div class="db-bar" id="bar-source" style="width:0%;background:#e74c3c"></div></div>
+            <div class="db-label"><span>🟢 Far Zone</span><span id="db-far">-- dB</span></div>
+            <div class="db-bar-bg"><div class="db-bar" id="bar-far" style="width:0%;background:#2ecc71"></div></div>
+            <div class="db-label"><span>📉 Reduction</span><span id="db-reduction">-- dB</span></div>
+        </div>
+
+        <div class="legend">
+            <h3>🗺 Legend</h3>
+            <div class="legend-item"><div class="legend-dot" style="background:#e94560"></div> Sound Source</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#4a90d9"></div> Solid Wall (reflects)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div> Trees (absorb+scatter)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8e44ad"></div> Absorber (foam/berm)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(255,200,0,0.6)"></div> High pressure</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(0,100,255,0.6)"></div> Low pressure</div>
+        </div>
+
+        <div class="tip">
+            💡 <b>How it works:</b><br>
+            • <b>Walls</b> reflect waves (hard boundary)<br>
+            • <b>Trees</b> scatter & absorb (partial)<br>
+            • <b>Absorbers</b> kill wave energy<br>
+            • Watch shadows behind barriers!
+        </div>
+
+        <div style="margin-top:10px">
+            <button class="btn btn-reset" onclick="resetAll()">🔄 Reset All</button>
+        </div>
     </div>
 
-    <div style="margin-top:8px; font-size:9px; color:#aaaaff;">SELECT MODE :</div>
-    <button class="btn active" id="btn-spread" onclick="setMode('spread')">FREE</button>
-    <button class="btn" id="btn-wall" onclick="setMode('wall')">WALL</button>
-    <button class="btn" id="btn-absorb" onclick="setMode('absorb')">ABSORB</button>
-    <button class="btn" id="btn-diffract" onclick="setMode('diffract')">BEND</button>
-    <button class="btn" id="btn-house" onclick="setMode('house')">HOUSE</button>
-
-    <div style="margin-top:6px;">
-        <button class="btn" onclick="resetWaves()">RESET</button>
-        <button class="btn" onclick="togglePause()" id="pauseBtn">STOP</button>
-        <button class="btn" onclick="showGuestbook()">📖</button>
-    </div>
-</div>
-
-<div id="stats">
-    <h3>📊 STATZ (live!!)</h3>
-    <div class="stat-row">
-        <span class="stat-label">Source</span>
-        <span class="stat-val" id="st-src">80 dB</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">@ Distance</span>
-        <span class="stat-val" id="st-dist">-- dB</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">After Wall</span>
-        <span class="stat-val" id="st-after">-- dB</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">INDOOR</span>
-        <span class="stat-val" id="st-inside">-- dB</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Reduction</span>
-        <span class="stat-val" id="st-reduction">-- dB</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Wave Energy</span>
-        <span class="stat-val" id="st-energy">--</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">Waves</span>
-        <span class="stat-val" id="st-waves">0</span>
-    </div>
-    <div class="stat-row">
-        <span class="stat-label">FPS (approx)</span>
-        <span class="stat-val" id="st-fps">???</span>
-    </div>
-    <div id="db-meter">
-        <label>🔊 LOUD METER :</label>
-        <div id="db-bar-bg"><div id="db-bar"></div></div>
+    <div class="main">
+        <canvas id="canvas"></canvas>
+        <div class="info-bar">
+            <span>🖱 Tool: <b id="tool-info">Add Source</b></span>
+            <span>📡 Sources: <b id="src-count">0</b></span>
+            <span>🧱 Objects: <b id="obj-count">0</b></span>
+            <span>🕐 Time: <b id="time-info">0</b></span>
+            <span>⚡ FPS: <b id="fps-info">0</b></span>
+            <span style="color:#aaa">Left-click to place | Right-click to remove</span>
+        </div>
     </div>
 </div>
 
-<div id="house-panel">
-    <h3>🏠 INSIDE DA HOUSE</h3>
-    <div style="font-size:8px; color:#888; margin-bottom:4px;">(what its like 2 be inside)</div>
-    <div class="house-row">
-        <span class="house-label">Level</span>
-        <span class="house-val" id="h-level">-- dB</span>
-    </div>
-    <div class="house-row">
-        <span class="house-label">Feels Like</span>
-        <span class="house-val" id="h-perception">--</span>
-    </div>
-    <div class="house-row">
-        <span class="house-label">Same As</span>
-        <span class="house-val" id="h-compare" style="color:#ccaaff">--</span>
-    </div>
-    <div class="house-row">
-        <span class="house-label">Sleep??</span>
-        <span class="house-val" id="h-sleep">--</span>
-    </div>
-    <div class="house-row">
-        <span class="house-label">Danger??</span>
-        <span class="house-val" id="h-health">--</span>
-    </div>
-    <div id="house-desc">--</div>
-</div>
-
-<div id="legend">
-    <div style="color:#ffff00; margin-bottom:3px;">LEGEND :</div>
-    <div class="leg-item"><div class="leg-color" style="background:#ffff00"></div> Noise Thing</div>
-    <div class="leg-item"><div class="leg-color" style="background:#00ffff"></div> Wave (strong)</div>
-    <div class="leg-item"><div class="leg-color" style="background:#000088"></div> Wave (weak lol)</div>
-    <div class="leg-item"><div class="leg-color" style="background:#ff0000"></div> Wall Thing</div>
-    <div class="leg-item"><div class="leg-color" style="background:#00ff00"></div> Sponge Stuff</div>
-    <div class="leg-item"><div class="leg-color" style="background:#ff00ff"></div> House</div>
-</div>
-
-<div id="visitor-counter">
-    You are visitor #: <span class="hit-counter" id="hit-count">000847</span>
-</div>
-
-<div id="footer">
-    best viewed in 800x600 &nbsp;|&nbsp; made with notepad &nbsp;|&nbsp; © 2003 soundwavsim.geocities.com
-</div>
-
-<!-- WIN95 DIALOG -->
-<div id="guestbook">
-    <div id="gb-titlebar">
-        <span>📖 Guestbook</span>
-        <button id="gb-close" onclick="hideGuestbook()">X</button>
-    </div>
-    <div id="gb-body">
-        <p><b>Sign my guestbook!!</b></p>
-        <p>UR Name:</p>
-        <input type="text" placeholder="cool_dude_2003">
-        <p>Comment:</p>
-        <textarea rows="3" placeholder="this sim is so cool!!!"></textarea>
-        <br>
-        <button id="gb-ok" onclick="hideGuestbook()">OK</button>
-        <button id="gb-ok" onclick="hideGuestbook()">Cancel</button>
-    </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
 
-// fake hit counter
-document.getElementById('hit-count').textContent = String(Math.floor(Math.random() * 9000) + 1000).padStart(6, '0');
+// Grid resolution (lower = faster, higher = prettier)
+const CELL = 6;
+let W, H, COLS, ROWS;
 
-function showGuestbook() { document.getElementById('guestbook').style.display = 'block'; }
-function hideGuestbook() { document.getElementById('guestbook').style.display = 'none'; }
+let pressure, prevPressure, velocity;
+let sources  = [];
+let objects  = []; // {type, cells: Set of "r,c"}
+let tool     = 'source';
+let isDrawing = false;
+let currentObj = null;
+let frame    = 0;
+let fps      = 0, lastTime = 0, fpsCounter = 0;
 
-// ── SCENE ──
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000022);
+// Settings
+let FREQ  = 5;
+let AMP   = 60;
+let SPEED = 3;
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-camera.position.set(0, 35, 70);
+// Absorption maps
+let absorption; // per-cell absorption coefficient
 
-const renderer = new THREE.WebGLRenderer({ antialias: false }); // NO antialiasing lol
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(0.7); // intentionally bad resolution
-document.body.appendChild(renderer.domElement);
+function init() {
+    canvas.width  = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight - 36;
+    W    = canvas.width;
+    H    = canvas.height;
+    COLS = Math.floor(W / CELL);
+    ROWS = Math.floor(H / CELL);
 
-scene.add(new THREE.AmbientLight(0x444488, 1.5));
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-dirLight.position.set(20, 40, 20);
-scene.add(dirLight);
+    pressure     = new Float32Array(COLS * ROWS);
+    prevPressure = new Float32Array(COLS * ROWS);
+    velocity     = new Float32Array(COLS * ROWS);
+    absorption   = new Float32Array(COLS * ROWS).fill(0.01); // default air damping
 
-// Ugly colored ground plane
-const groundGeo = new THREE.PlaneGeometry(200, 200);
-const groundMat = new THREE.MeshPhongMaterial({ color: 0x111133 });
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = -0.5;
-scene.add(ground);
-
-// Grid but uglier
-const gridHelper = new THREE.GridHelper(120, 12, 0x00ff00, 0x004400);
-scene.add(gridHelper);
-
-// Some random ugly cubes scattered around
-for (let i = 0; i < 8; i++) {
-    const geo = new THREE.BoxGeometry(Math.random() * 3 + 1, Math.random() * 4 + 1, Math.random() * 3 + 1);
-    const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
-    const mat = new THREE.MeshPhongMaterial({ color: colors[i % colors.length] });
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(Math.random() * 80 - 40, Math.random() * 2, Math.random() * 80 - 40);
-    scene.add(m);
+    rebuildAbsorption();
 }
 
-// ── STATE ──
-let mode = 'spread';
-let paused = false;
-let waves = [];
-let sceneObjects = [];
-let houseMeshes = [];
-let time = 0;
-let spawnTimer = 0;
-let lastTime = performance.now();
-let fpsArr = [];
+function idx(r, c) { return r * COLS + c; }
 
-// ── SOURCE ──
-const srcGeo = new THREE.DodecahedronGeometry(1.4, 0); // ugly shape
-const srcMat = new THREE.MeshPhongMaterial({ color: 0xffff00, emissive: 0x888800, flatShading: true });
-const srcMesh = new THREE.Mesh(srcGeo, srcMat);
-srcMesh.position.set(-22, 0, 0);
-scene.add(srcMesh);
-
-const glowGeo = new THREE.OctahedronGeometry(2.2, 0);
-const glowMat = new THREE.MeshPhongMaterial({ color: 0xff00ff, emissive: 0xff00ff, transparent: true, opacity: 0.2, wireframe: true });
-const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-glowMesh.position.copy(srcMesh.position);
-scene.add(glowMesh);
-
-// ── SLIDERS ──
-function getVal(id) { return parseFloat(document.getElementById(id).value); }
-
-document.getElementById('src-db').addEventListener('input', e => document.getElementById('db-src-label').textContent = e.target.value + ' dB');
-document.getElementById('freq').addEventListener('input', e => document.getElementById('freq-label').textContent = e.target.value + ' Hz');
-document.getElementById('speed').addEventListener('input', e => document.getElementById('speed-label').textContent = e.target.value + 'x');
-document.getElementById('absorb').addEventListener('input', e => document.getElementById('absorb-label').textContent = e.target.value);
-document.getElementById('dist').addEventListener('input', e => { document.getElementById('dist-label').textContent = e.target.value + ' m'; updateHousePosition(); });
-document.getElementById('wall-thick').addEventListener('input', e => document.getElementById('wall-label').textContent = e.target.value + ' cm');
-
-// ── WAVES ──
-function createWaveRing() {
-    // Use icosahedron wireframe for ugly look
-    const geo = new THREE.IcosahedronGeometry(1.2, 1);
-    const mat = new THREE.MeshPhongMaterial({
-        color: 0x00ffff,
-        emissive: 0x00ffff,
-        emissiveIntensity: 0.8,
-        transparent: true,
-        opacity: 0.85,
-        wireframe: true
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(srcMesh.position);
-    scene.add(mesh);
-    return { mesh, radius: 1.2, energy: 1.0, alive: true };
-}
-
-function spawnWave() { waves.push(createWaveRing()); }
-
-// ── CLEAR ──
-function clearScene() {
-    sceneObjects.forEach(o => scene.remove(o));
-    sceneObjects = [];
-    houseMeshes.forEach(h => scene.remove(h));
-    houseMeshes = [];
-}
-
-// ── HOUSE ──
-let houseX = 0;
-
-function buildHouse(x) {
-    houseX = x;
-    houseMeshes.forEach(h => scene.remove(h));
-    houseMeshes = [];
-
-    const wallThick = getVal('wall-thick') / 100 * 3;
-    // Ugly wireframe + solid mix
-    const wallMat = new THREE.MeshPhongMaterial({ color: 0xff00ff, emissive: 0x440044, flatShading: true });
-    const roofMat = new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0x440000, flatShading: true });
-
-    // Front
-    const fw = new THREE.Mesh(new THREE.BoxGeometry(wallThick, 10, 24), wallMat);
-    fw.position.set(x, 0, 0);
-    scene.add(fw); houseMeshes.push(fw);
-
-    // Back
-    const bw = new THREE.Mesh(new THREE.BoxGeometry(wallThick, 10, 24), wallMat);
-    bw.position.set(x + 14, 0, 0);
-    scene.add(bw); houseMeshes.push(bw);
-
-    // Sides
-    [-12, 12].forEach(z => {
-        const sw = new THREE.Mesh(new THREE.BoxGeometry(14, 10, wallThick), wallMat);
-        sw.position.set(x + 7, 0, z);
-        scene.add(sw); houseMeshes.push(sw);
-    });
-
-    // Roof - pyramid
-    const roofGeo = new THREE.ConeGeometry(12, 6, 4);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.set(x + 7, 8, 0);
-    roof.rotation.y = Math.PI / 4;
-    scene.add(roof); houseMeshes.push(roof);
-
-    // Ugly wireframe outline
-    const wireGeo = new THREE.BoxGeometry(16, 12, 26);
-    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-    const wire = new THREE.Mesh(wireGeo, wireMat);
-    wire.position.set(x + 7, 2, 0);
-    scene.add(wire); houseMeshes.push(wire);
-
-    // Chimney
-    const chim = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshPhongMaterial({ color: 0x888888 }));
-    chim.position.set(x + 12, 10, 0);
-    scene.add(chim); houseMeshes.push(chim);
-}
-
-function updateHousePosition() {
-    if (houseMeshes.length > 0) buildHouse(srcMesh.position.x + getVal('dist') * 0.9);
-}
-
-// ── MODES ──
-function addWall(x) {
-    const geo = new THREE.BoxGeometry(1.5, 10, 34);
-    const mat = new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0x440000, flatShading: true });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, 0, 0);
-    scene.add(mesh); sceneObjects.push(mesh);
-    // wireframe overlay
-    const w = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true }));
-    w.position.copy(mesh.position);
-    scene.add(w); sceneObjects.push(w);
-}
-
-function addAbsorber(x) {
-    const geo = new THREE.BoxGeometry(2, 10, 34);
-    const mat = new THREE.MeshPhongMaterial({ color: 0x00ff00, emissive: 0x004400, flatShading: true });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, 0, 0);
-    scene.add(mesh); sceneObjects.push(mesh);
-}
-
-function addDiffractWall(x) {
-    const mat = new THREE.MeshPhongMaterial({ color: 0xff4400, emissive: 0x441100, flatShading: true });
-    [-12, 12].forEach(z => {
-        const geo = new THREE.BoxGeometry(1.5, 10, 11);
-        const m = new THREE.Mesh(geo, mat);
-        m.position.set(x, 0, z);
-        scene.add(m); sceneObjects.push(m);
-    });
-    // gap indicator - flashing wireframe
-    const gapGeo = new THREE.BoxGeometry(1.5, 10, 8);
-    const gapMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.3 });
-    const gap = new THREE.Mesh(gapGeo, gapMat);
-    gap.position.set(x, 0, 0);
-    scene.add(gap); sceneObjects.push(gap);
-}
-
-function setMode(m) {
-    mode = m;
-    clearScene();
-    resetWaves();
-    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-' + m).classList.add('active');
-    if (m === 'wall') addWall(0);
-    if (m === 'absorb') addAbsorber(0);
-    if (m === 'diffract') addDiffractWall(0);
-    if (m === 'house') buildHouse(srcMesh.position.x + getVal('dist') * 0.9);
-}
-
-function resetWaves() {
-    waves.forEach(w => scene.remove(w.mesh));
-    waves = [];
-    time = 0;
-    spawnTimer = 0;
-}
-
-function togglePause() {
-    paused = !paused;
-    document.getElementById('pauseBtn').textContent = paused ? 'PLAY' : 'STOP';
-}
-
-// ── dB MATH ──
-function dbAtDistance(srcDb, distM) {
-    if (distM <= 0) return srcDb;
-    return srcDb - 20 * Math.log10(distM);
-}
-
-function wallAttenuation(thicknessCm) {
-    return Math.min(60, (thicknessCm / 20) * 40 + 5);
-}
-
-function modeAttenuation() {
-    const absorb = getVal('absorb');
-    switch (mode) {
-        case 'spread': return 0;
-        case 'wall': return 15 + absorb * 80;
-        case 'absorb': return 25 + absorb * 150;
-        case 'diffract': return 8 + absorb * 40;
-        case 'house': return 0;
-        default: return 0;
-    }
-}
-
-function getIndoorDb() {
-    const srcDb = getVal('src-db');
-    const distM = getVal('dist');
-    const wallCm = getVal('wall-thick');
-    const atDist = dbAtDistance(srcDb, distM);
-    const modeAtt = modeAttenuation();
-    const afterMode = atDist - modeAtt;
-    let indoorDb = afterMode;
-    if (mode === 'house') indoorDb = afterMode - wallAttenuation(wallCm);
-    return {
-        src: srcDb,
-        atDist: Math.round(atDist * 10) / 10,
-        afterMode: Math.round(afterMode * 10) / 10,
-        indoor: Math.round(Math.max(0, indoorDb) * 10) / 10,
-        reduction: Math.round((srcDb - Math.max(0, indoorDb)) * 10) / 10
-    };
-}
-
-function dbColor(db) {
-    if (db < 40) return '#00ff00';
-    if (db < 60) return '#88ff00';
-    if (db < 75) return '#ffff00';
-    if (db < 90) return '#ff8800';
-    return '#ff0000';
-}
-
-function dbPerception(db) {
-    if (db < 20) return 'basically silent';
-    if (db < 35) return 'super quiet';
-    if (db < 45) return 'quietish';
-    if (db < 55) return 'kinda noisy';
-    if (db < 65) return 'noticeable';
-    if (db < 75) return 'loud lol';
-    if (db < 85) return 'VERY LOUD';
-    if (db < 100) return 'TOO LOUD!!';
-    return 'RIP UR EARS';
-}
-
-function dbCompare(db) {
-    if (db < 20) return 'recording studio';
-    if (db < 30) return 'someone whispering';
-    if (db < 40) return 'library';
-    if (db < 50) return 'quiet office';
-    if (db < 55) return 'normal talking';
-    if (db < 65) return 'TV volume';
-    if (db < 75) return 'vacuum cleaner';
-    if (db < 85) return 'busy restaurant';
-    if (db < 95) return 'lawn mower';
-    if (db < 105) return 'motorcycle';
-    if (db < 115) return 'rock concert';
-    return 'jet engine LOL';
-}
-
-function dbSleepImpact(db) {
-    if (db < 30) return 'zzz fine';
-    if (db < 40) return 'maybe ok';
-    if (db < 55) return 'hard 2 sleep';
-    if (db < 65) return 'nope cant sleep';
-    return 'NO SLEEP 4 U';
-}
-
-function dbHealthRisk(db) {
-    if (db < 55) return 'chill';
-    if (db < 70) return 'meh ok';
-    if (db < 85) return 'careful!!';
-    if (db < 95) return 'DANGER!!';
-    return '!! RUN !!';
-}
-
-function dbHouseDesc(db) {
-    if (db < 35) return 'its nice and quiet in here :3 good 4 sleeping';
-    if (db < 50) return 'ok its not too bad. u can still hear some stuff tho';
-    if (db < 60) return 'kinda annoying tbh. might wanna close the window';
-    if (db < 70) return 'its pretty loud even inside!! need better walls';
-    if (db < 80) return 'yo this is BAD. everything is shaking. turn it down!!!';
-    return 'THIS IS INSANE THE WALLS ARE VIBRATING WHY IS IT SO LOUD';
-}
-
-// ── STATS UPDATE ──
-function updateStats() {
-    const db = getIndoorDb();
-
-    document.getElementById('st-src').textContent = db.src + ' dB';
-    document.getElementById('st-dist').textContent = db.atDist + ' dB';
-    document.getElementById('st-after').textContent = db.afterMode + ' dB';
-    document.getElementById('st-inside').textContent = db.indoor + ' dB';
-    document.getElementById('st-inside').style.color = dbColor(db.indoor);
-    document.getElementById('st-reduction').textContent = '-' + db.reduction + ' dB';
-    document.getElementById('st-waves').textContent = waves.length;
-
-    const avgE = waves.length > 0 ? waves.reduce((s, w) => s + w.energy, 0) / waves.length : 0;
-    document.getElementById('st-energy').textContent = (avgE * 100).toFixed(1) + '%';
-
-    // dB bar
-    const bar = document.getElementById('db-bar');
-    bar.style.width = Math.min(100, (db.indoor / 130) * 100) + '%';
-    bar.style.background = db.indoor > 85
-        ? 'repeating-linear-gradient(45deg, #ff0000, #ff0000 3px, #880000 3px, #880000 6px)'
-        : db.indoor > 60
-        ? 'repeating-linear-gradient(45deg, #ffff00, #ffff00 3px, #888800 3px, #888800 6px)'
-        : 'repeating-linear-gradient(45deg, #00ff00, #00ff00 3px, #008800 3px, #008800 6px)';
-
-    // House panel
-    const hlv = document.getElementById('h-level');
-    hlv.textContent = db.indoor + ' dB';
-    hlv.style.color = dbColor(db.indoor);
-
-    const hp = document.getElementById('h-perception');
-    hp.textContent = dbPerception(db.indoor);
-    hp.style.color = dbColor(db.indoor);
-
-    document.getElementById('h-compare').textContent = dbCompare(db.indoor);
-
-    const hs = document.getElementById('h-sleep');
-    hs.textContent = dbSleepImpact(db.indoor);
-    hs.style.color = db.indoor < 40 ? '#00ff00' : db.indoor < 55 ? '#ffff00' : '#ff0000';
-
-    const hh = document.getElementById('h-health');
-    hh.textContent = dbHealthRisk(db.indoor);
-    hh.style.color = dbColor(db.indoor);
-
-    document.getElementById('house-desc').textContent = dbHouseDesc(db.indoor);
-
-    // Danger blinking
-    if (db.indoor > 90) {
-        hlv.classList.add('danger');
-    } else {
-        hlv.classList.remove('danger');
-    }
-}
-
-// ── FPS COUNTER ──
-function updateFPS() {
-    const now = performance.now();
-    const delta = now - lastTime;
-    lastTime = now;
-    fpsArr.push(1000 / delta);
-    if (fpsArr.length > 20) fpsArr.shift();
-    const avg = fpsArr.reduce((a, b) => a + b, 0) / fpsArr.length;
-    document.getElementById('st-fps').textContent = Math.round(avg);
-}
-
-// ── ORBIT ──
-let isDragging = false;
-let prevMouse = { x: 0, y: 0 };
-let spherical = { theta: 0.2, phi: 0.85, radius: 70 };
-
-renderer.domElement.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
-renderer.domElement.addEventListener('mouseup', () => isDragging = false);
-renderer.domElement.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    spherical.theta -= (e.clientX - prevMouse.x) * 0.008;
-    spherical.phi = Math.max(0.1, Math.min(1.4, spherical.phi - (e.clientY - prevMouse.y) * 0.008));
-    prevMouse = { x: e.clientX, y: e.clientY };
-});
-renderer.domElement.addEventListener('wheel', e => {
-    spherical.radius = Math.max(20, Math.min(130, spherical.radius + e.deltaY * 0.1));
-});
-renderer.domElement.addEventListener('touchstart', e => { isDragging = true; prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY }; });
-renderer.domElement.addEventListener('touchend', () => isDragging = false);
-renderer.domElement.addEventListener('touchmove', e => {
-    if (!isDragging) return;
-    spherical.theta -= (e.touches[0].clientX - prevMouse.x) * 0.008;
-    spherical.phi = Math.max(0.1, Math.min(1.4, spherical.phi - (e.touches[0].clientY - prevMouse.y) * 0.008));
-    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-});
-
-// ── MAIN LOOP ──
-function animate() {
-    requestAnimationFrame(animate);
-    updateFPS();
-
-    if (!paused) {
-        time += 0.016;
-        spawnTimer += 0.016;
-
-        const freq = getVal('freq');
-        const speed = getVal('speed');
-        const absorbRate = getVal('absorb');
-
-        if (spawnTimer > 1 / freq) {
-            spawnWave();
-            spawnTimer = 0;
+function rebuildAbsorption() {
+    absorption.fill(0.008); // air
+    for (const obj of objects) {
+        for (const key of obj.cells) {
+            const [r, c] = key.split(',').map(Number);
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+            const i = idx(r, c);
+            if      (obj.type === 'wall')   absorption[i] = 999; // solid
+            else if (obj.type === 'trees')  absorption[i] = 0.35; // heavy scatter
+            else if (obj.type === 'absorb') absorption[i] = 0.85; // absorber
         }
+    }
+}
 
-        // Rotate source ugly
-        srcMesh.rotation.y += 0.03;
-        srcMesh.rotation.x += 0.01;
-        glowMesh.rotation.y -= 0.05;
-        glowMesh.rotation.z += 0.02;
-        const pulse = 0.8 + 0.4 * Math.sin(time * freq * 5);
-        glowMesh.scale.setScalar(pulse);
-        glowMat.opacity = 0.1 + 0.2 * Math.abs(Math.sin(time * freq * 5));
+// ── Wave simulation (FDTD-lite scalar wave) ──────────────────────
+function stepWave() {
+    const c2 = (SPEED * 0.18) ** 2; // wave speed squared
 
-        // Rotate random cubes
-        scene.children.forEach(c => {
-            if (c.geometry && c.geometry.type === 'BoxGeometry' && !sceneObjects.includes(c) && !houseMeshes.includes(c) && c !== ground) {
-                c.rotation.y += 0.008;
-                c.rotation.x += 0.003;
+    // Excite sources
+    for (const src of sources) {
+        const i = idx(src.r, src.c);
+        pressure[i] += src.amp * Math.sin(2 * Math.PI * src.freq * frame / 60);
+    }
+
+    const next = new Float32Array(COLS * ROWS);
+
+    for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 1; c < COLS - 1; c++) {
+            const i = idx(r, c);
+            const ab = absorption[i];
+
+            if (ab > 10) { // solid wall
+                next[i] = 0;
+                continue;
             }
-        });
 
-        // Wave update
-        for (let i = waves.length - 1; i >= 0; i--) {
-            const w = waves[i];
-            if (!w.alive) { scene.remove(w.mesh); waves.splice(i, 1); continue; }
+            const lap =
+                pressure[idx(r-1, c)] +
+                pressure[idx(r+1, c)] +
+                pressure[idx(r, c-1)] +
+                pressure[idx(r, c+1)] -
+                4 * pressure[i];
 
-            w.radius += speed * 0.32;
-            w.mesh.scale.setScalar(w.radius / 1.2);
-            w.mesh.rotation.x += 0.04;
-            w.mesh.rotation.z += 0.03;
+            const damp = ab;
+            next[i] = (2 - damp) * pressure[i]
+                      - (1 - damp) * prevPressure[i]
+                      + c2 * lap;
 
-            w.energy -= 0.003 * speed;
-
-            const distFromSrc = w.radius;
-            if (mode === 'wall' && distFromSrc > 22) w.energy -= 0.035 * speed;
-            if (mode === 'absorb' && distFromSrc > 22) w.energy -= absorbRate * speed * 1.4;
-            if (mode === 'diffract' && distFromSrc > 22) w.energy -= 0.018 * speed;
-            if (mode === 'house' && distFromSrc > getVal('dist') * 0.85) w.energy -= 0.028 * speed;
-
-            w.energy -= absorbRate * 0.008;
-
-            const e = Math.max(0, Math.min(1, w.energy));
-            const c = new THREE.Color().lerpColors(new THREE.Color(0x000044), new THREE.Color(0x00ffff), e);
-            w.mesh.material.color.set(c);
-            w.mesh.material.emissive.set(c);
-            w.mesh.material.emissiveIntensity = e * 0.9;
-            w.mesh.material.opacity = e * 0.82;
-
-            if (w.energy <= 0 || w.radius > 70) w.alive = false;
+            // Boundary absorb edges
+            if (r < 3 || r > ROWS-4 || c < 3 || c > COLS-4) {
+                next[i] *= 0.92;
+            }
         }
-
-        updateStats();
     }
 
-    camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
-    camera.position.y = spherical.radius * Math.cos(spherical.phi);
-    camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-    camera.lookAt(0, 0, 0);
+    prevPressure.set(pressure);
+    pressure.set(next);
+    frame++;
+}
 
-    renderer.render(scene, camera);
+// ── Rendering ────────────────────────────────────────────────────
+function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw pressure field
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const i   = idx(r, c);
+            const ab  = absorption[i];
+            const p   = pressure[i];
+
+            let color;
+            if (ab > 10) {
+                // Wall - blue-grey
+                color = '#1e3a5f';
+            } else if (ab > 0.5) {
+                // Absorber - purple tint
+                const t = Math.min(1, Math.abs(p) / 30);
+                color = `rgba(142,68,173,${0.4 + t * 0.4})`;
+            } else if (ab > 0.1) {
+                // Trees - green tint
+                const t = Math.min(1, Math.abs(p) / 30);
+                color = `rgba(39,174,96,${0.35 + t * 0.35})`;
+            } else {
+                // Air - pressure color
+                const v = Math.max(-1, Math.min(1, p / 60));
+                if (v > 0) {
+                    color = `rgba(255,${180 - v*180},${0},${v * 0.85})`;
+                } else {
+                    color = `rgba(${0},${80 + (-v)*80},${255},${-v * 0.85})`;
+                }
+            }
+
+            ctx.fillStyle = color;
+            ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+    }
+
+    // Draw object outlines
+    for (const obj of objects) {
+        ctx.fillStyle = objColor(obj.type, 0.15);
+        for (const key of obj.cells) {
+            const [r, c] = key.split(',').map(Number);
+            ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+    }
+
+    // Draw sources
+    for (const src of sources) {
+        const x = src.c * CELL + CELL/2;
+        const y = src.r * CELL + CELL/2;
+        const pulse = 1 + 0.3 * Math.sin(2 * Math.PI * src.freq * frame / 60);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 10 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(233,69,96,0.3)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#e94560';
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = '10px Arial';
+        ctx.fillText('📡', x - 7, y - 8);
+    }
+
+    // Draw measurement points
+    drawMeasurePoint(measureNear, '🔴 Near');
+    drawMeasurePoint(measureFar,  '🟢 Far');
+}
+
+function drawMeasurePoint(pt, label) {
+    if (!pt) return;
+    ctx.beginPath();
+    ctx.arc(pt.c * CELL + CELL/2, pt.r * CELL + CELL/2, 8, 0, Math.PI * 2);
+    ctx.strokeStyle = label.includes('🔴') ? '#e74c3c' : '#2ecc71';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = 'white';
+    ctx.font = '10px Arial';
+    ctx.fillText(label, pt.c * CELL + 12, pt.r * CELL + 14);
+}
+
+function objColor(type, alpha = 1) {
+    const map = { wall: `rgba(74,144,217,${alpha})`, trees: `rgba(39,174,96,${alpha})`, absorb: `rgba(142,68,173,${alpha})` };
+    return map[type] || `rgba(200,200,200,${alpha})`;
+}
+
+// ── Measurement ──────────────────────────────────────────────────
+let measureNear = null;
+let measureFar  = null;
+let nearHistory = [], farHistory = [];
+
+function updateMeasurements() {
+    if (sources.length === 0) return;
+    const src = sources[0];
+
+    // Near = 5 cells from source
+    measureNear = { r: src.r, c: Math.min(COLS-1, src.c + 5) };
+    // Far  = right side of canvas
+    measureFar  = { r: src.r, c: Math.max(0, COLS - 10) };
+
+    const pNear = Math.abs(pressure[idx(measureNear.r, measureNear.c)]);
+    const pFar  = Math.abs(pressure[idx(measureFar.r,  measureFar.c)]);
+
+    nearHistory.push(pNear); if (nearHistory.length > 60) nearHistory.shift();
+    farHistory.push(pFar);   if (farHistory.length  > 60) farHistory.shift();
+
+    const avgNear = nearHistory.reduce((a,b) => a+b, 0) / nearHistory.length;
+    const avgFar  = farHistory.reduce((a,b) => a+b, 0)  / farHistory.length;
+
+    // Convert to dB-like (relative)
+    const dbNear = avgNear > 0.1 ? (20 * Math.log10(avgNear)).toFixed(1) : '---';
+    const dbFar  = avgFar  > 0.1 ? (20 * Math.log10(avgFar)).toFixed(1)  : '---';
+
+    document.getElementById('db-source').textContent = dbNear !== '---' ? dbNear + ' dB' : '---';
+    document.getElementById('db-far').textContent    = dbFar  !== '---' ? dbFar  + ' dB' : '---';
+
+    const barN = Math.min(100, Math.max(0, (avgNear / 80) * 100));
+    const barF = Math.min(100, Math.max(0, (avgFar  / 80) * 100));
+    document.getElementById('bar-source').style.width = barN + '%';
+    document.getElementById('bar-far').style.width    = barF + '%';
+
+    if (dbNear !== '---' && dbFar !== '---') {
+        const red = (parseFloat(dbNear) - parseFloat(dbFar)).toFixed(1);
+        document.getElementById('db-reduction').textContent = red + ' dB reduction';
+    }
+}
+
+// ── Main loop ────────────────────────────────────────────────────
+function loop(ts) {
+    // FPS
+    fpsCounter++;
+    if (ts - lastTime > 500) {
+        fps = Math.round(fpsCounter * 1000 / (ts - lastTime));
+        fpsCounter = 0; lastTime = ts;
+        document.getElementById('fps-info').textContent  = fps;
+        document.getElementById('time-info').textContent = frame;
+        updateMeasurements();
+    }
+
+    stepWave();
+    stepWave(); // double-step for speed
+    render();
+
+    requestAnimationFrame(loop);
+}
+
+// ── Tools & Input ────────────────────────────────────────────────
+function setTool(t) {
+    tool = t;
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + t)?.classList.add('active');
+    document.getElementById('tool-info').textContent = t;
+}
+
+function cellFromEvent(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    return { r: Math.floor(y / CELL), c: Math.floor(x / CELL) };
+}
+
+function paintCell(r, c) {
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+    if (tool === 'source') return; // handled on click
+
+    if (tool === 'erase') {
+        // Remove any object covering this cell
+        for (let i = objects.length - 1; i >= 0; i--) {
+            objects[i].cells.delete(`${r},${c}`);
+            if (objects[i].cells.size === 0) objects.splice(i, 1);
+        }
+        rebuildAbsorption();
+        return;
+    }
+
+    if (!currentObj) {
+        currentObj = { type: tool, cells: new Set() };
+        objects.push(currentObj);
+    }
+
+    // Paint a brush of cells
+    const br = tool === 'trees' ? 2 : 1;
+    for (let dr = -br; dr <= br; dr++) {
+        for (let dc = -br; dc <= br; dc++) {
+            const rr = r + dr, cc = c + dc;
+            if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS) {
+                currentObj.cells.add(`${rr},${cc}`);
+            }
+        }
+    }
+    rebuildAbsorption();
+    document.getElementById('obj-count').textContent = objects.length;
+}
+
+canvas.addEventListener('mousedown', e => {
+    e.preventDefault();
+    isDrawing = true;
+    currentObj = null;
+    const { r, c } = cellFromEvent(e);
+
+    if (e.button === 2) {
+        // Right-click remove
+        for (let i = objects.length - 1; i >= 0; i--) {
+            objects[i].cells.delete(`${r},${c}`);
+            if (objects[i].cells.size === 0) objects.splice(i, 1);
+        }
+        sources = sources.filter(s => !(Math.abs(s.r-r) < 3 && Math.abs(s.c-c) < 3));
+        rebuildAbsorption();
+        return;
+    }
+
+    if (tool === 'source') {
+        sources.push({ r, c, freq: FREQ, amp: AMP });
+        document.getElementById('src-count').textContent = sources.length;
+    } else {
+        paintCell(r, c);
+    }
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (!isDrawing || tool === 'source') return;
+    const { r, c } = cellFromEvent(e);
+    paintCell(r, c);
+});
+
+canvas.addEventListener('mouseup',    () => { isDrawing = false; currentObj = null; });
+canvas.addEventListener('mouseleave', () => { isDrawing = false; currentObj = null; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ── Settings ─────────────────────────────────────────────────────
+function updateSettings() {
+    FREQ  = parseFloat(document.getElementById('freq').value);
+    AMP   = parseFloat(document.getElementById('amp').value);
+    SPEED = parseFloat(document.getElementById('speed').value);
+    document.getElementById('freq-val').textContent  = FREQ;
+    document.getElementById('amp-val').textContent   = AMP;
+    document.getElementById('speed-val').textContent = SPEED;
+    for (const s of sources) { s.freq = FREQ; s.amp = AMP; }
+}
+
+// ── Presets ──────────────────────────────────────────────────────
+function loadScenario() {
+    const s = document.getElementById('scenario').value;
+    if (!s) return;
+    resetAll(false);
+
+    const midR = Math.floor(ROWS / 2);
+    const midC = Math.floor(COLS / 2);
+
+    if (s === 'highway') {
+        // Source on left, solid wall in middle
+        sources.push({ r: midR, c: 5, freq: FREQ, amp: AMP });
+        const wallC = Math.floor(COLS * 0.4);
+        const obj = { type: 'wall', cells: new Set() };
+        for (let r = midR - 12; r <= midR + 12; r++) {
+            for (let c = wallC; c <= wallC + 2; c++) obj.cells.add(`${r},${c}`);
+        }
+        objects.push(obj);
+
+    } else if (s === 'forest') {
+        sources.push({ r: midR, c: 4, freq: FREQ, amp: AMP });
+        const obj = { type: 'trees', cells: new Set() };
+        const startC = Math.floor(COLS * 0.35);
+        for (let r = midR - 15; r <= midR + 15; r++) {
+            for (let c = startC; c <= startC + 12; c++) obj.cells.add(`${r},${c}`);
+        }
+        objects.push(obj);
+
+    } else if (s === 'building') {
+        // Two sources, building causes reflection
+        sources.push({ r: midR, c: 5, freq: FREQ, amp: AMP });
+        const obj = { type: 'wall', cells: new Set() };
+        for (let r = midR - 8; r <= midR + 8; r++) {
+            for (let c = midC - 5; c <= midC + 5; c++) obj.cells.add(`${r},${c}`);
+        }
+        objects.push(obj);
+
+    } else if (s === 'barrier') {
+        sources.push({ r: midR + 5, c: 4, freq: FREQ, amp: AMP });
+        const obj = { type: 'wall', cells: new Set() };
+        // Angled barrier
+        for (let i = 0; i < 20; i++) {
+            const r = midR - 10 + i;
+            const c = Math.floor(COLS * 0.35) + Math.floor(i * 0.5);
+            for (let dr = 0; dr < 1; dr++)
+                for (let dc = 0; dc < 2; dc++)
+                    obj.cells.add(`${r+dr},${c+dc}`);
+        }
+        objects.push(obj);
+    }
+
+    document.getElementById('scenario').value = '';
+    rebuildAbsorption();
+    document.getElementById('src-count').textContent = sources.length;
+    document.getElementById('obj-count').textContent = objects.length;
+}
+
+function resetAll(full = true) {
+    sources  = [];
+    objects  = [];
+    currentObj = null;
+    nearHistory = []; farHistory = [];
+    frame = 0;
+    init();
+    document.getElementById('src-count').textContent = 0;
+    document.getElementById('obj-count').textContent = 0;
+    document.getElementById('db-source').textContent = '---';
+    document.getElementById('db-far').textContent    = '---';
+    document.getElementById('db-reduction').textContent = '---';
+    document.getElementById('bar-source').style.width = '0%';
+    document.getElementById('bar-far').style.width    = '0%';
 }
 
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    const prevSrc = [...sources];
+    const prevObj = objects.map(o => ({ type: o.type, cells: new Set(o.cells) }));
+    init();
+    sources = prevSrc;
+    objects = prevObj;
+    rebuildAbsorption();
 });
 
-setMode('spread');
-animate();
-
+// ── Start ────────────────────────────────────────────────────────
+init();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
