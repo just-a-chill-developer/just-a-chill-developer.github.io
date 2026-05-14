@@ -3,553 +3,766 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced 3D Highway Noise Simulation</title>
+    <title>Sound Wave Simulation</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #5ab2e6;
-        }
-        #canvas-container {
-            width: 100vw;
-            height: 100vh;
-            display: block;
-        }
-        /* Modernized UI Panel */
-        #ui-panel {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #ui {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 320px;
-            pointer-events: auto;
-            color: #f1f5f9;
-        }
-        h2 { margin-top: 0; font-size: 1.3rem; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .control-group { margin-bottom: 18px; }
-        label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1.05rem;
-        }
-        input[type="checkbox"] { margin-right: 12px; width: 20px; height: 20px; accent-color: #38bdf8; cursor: pointer;}
-        
-        .meter-container {
-            width: 100%;
-            background-color: #334155;
-            border-radius: 8px;
-            overflow: hidden;
-            height: 28px;
-            margin-top: 8px;
-            border: 1px solid #0f172a;
-        }
-        #noise-bar {
-            height: 100%;
-            width: 100%;
-            background-color: #ef4444;
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
-        }
-        .stats {
-            margin-top: 6px;
-            font-size: 0.85rem;
-            color: #94a3b8;
-            padding-left: 32px;
-        }
-        #instructions {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
+            top: 10px;
+            left: 10px;
             color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
-            text-shadow: 0px 2px 4px rgba(0,0,0,0.8);
-            pointer-events: none;
+            background: rgba(0,0,0,0.7);
+            padding: 12px;
+            border-radius: 8px;
+            width: 230px;
+        }
+        #ui h3 { margin-bottom: 10px; color: #88ccff; font-size: 14px; }
+        .control { margin: 8px 0; font-size: 12px; }
+        .control label { display: block; margin-bottom: 3px; color: #aaa; }
+        .control input[type=range] { width: 100%; accent-color: #44aaff; }
+        .val { color: #88ccff; float: right; font-size: 11px; }
+        .btn {
+            display: inline-block;
+            margin: 3px 2px;
+            padding: 5px 9px;
+            background: #224466;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .btn:hover { background: #336699; }
+        .btn.active { background: #558833; }
+
+        #stats {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.75);
+            padding: 12px;
+            border-radius: 8px;
+            width: 210px;
+            font-size: 12px;
+        }
+        #stats h3 { color: #ffcc44; margin-bottom: 10px; font-size: 13px; }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #223;
+        }
+        .stat-label { color: #aaa; }
+        .stat-val { color: #44ffaa; font-weight: bold; }
+        .stat-val.warn { color: #ffaa44; }
+        .stat-val.danger { color: #ff4444; }
+
+        #db-meter {
+            margin-top: 10px;
+        }
+        #db-meter label { color: #aaa; font-size: 11px; display: block; margin-bottom: 4px; }
+        #db-bar-bg {
+            width: 100%;
+            height: 14px;
+            background: #112;
+            border-radius: 7px;
+            overflow: hidden;
+        }
+        #db-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 7px;
+            transition: width 0.1s, background 0.1s;
+            background: #44ff88;
+        }
+
+        #house-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.75);
+            padding: 12px;
+            border-radius: 8px;
+            width: 210px;
+            font-size: 12px;
+        }
+        #house-panel h3 { color: #ffaaff; margin-bottom: 8px; font-size: 13px; }
+        .house-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 11px;
+        }
+        .house-label { color: #bbb; }
+        .house-val { font-weight: bold; }
+        .comfort { color: #44ff88; }
+        .ok { color: #ffcc44; }
+        .loud { color: #ff8844; }
+        .danger { color: #ff3333; }
+
+        #house-desc {
+            margin-top: 8px;
+            padding: 6px;
+            background: #112233;
+            border-radius: 4px;
+            font-size: 10px;
+            color: #99ccff;
+            line-height: 1.5;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+        .leg-item { display: flex; align-items: center; margin: 3px 0; }
+        .leg-color { width: 13px; height: 13px; border-radius: 50%; margin-right: 8px; flex-shrink:0; }
+
+        #info-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #88ccff;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            white-space: nowrap;
         }
     </style>
-    <!-- Load Three.js and OrbitControls -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <div id="ui-panel">
-        <h2>Noise Mitigation Controls</h2>
-        
-        <div class="control-group">
-            <label>
-                <input type="checkbox" id="toggle-wall">
-                Construct Sound Barrier
-            </label>
-            <div class="stats">Blocks direct acoustic waves (-20 dB)</div>
-        </div>
-
-        <div class="control-group">
-            <label>
-                <input type="checkbox" id="toggle-trees">
-                Plant Pine Buffer Zone
-            </label>
-            <div class="stats">Scatters high frequencies (-10 dB)</div>
-        </div>
-
-        <div class="control-group">
-            <label>
-                <input type="checkbox" id="toggle-speed">
-                Enforce Speed Limits
-            </label>
-            <div class="stats">Reduces tire & engine roar (-15 dB)</div>
-        </div>
-
-        <div style="margin-top: 30px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
-            <strong>Volume at Residence: <span id="noise-value" style="color: #38bdf8; font-size: 1.2rem;">85</span> dB</strong>
-            <div class="meter-container">
-                <div id="noise-bar"></div>
-            </div>
-            <div id="noise-status" style="margin-top: 10px; color: #ef4444; font-weight: bold; text-align: center;">Harmful Environment</div>
-        </div>
+<div id="ui">
+    <h3>🔊 Sound Wave Simulation</h3>
+    <div class="control">
+        <label>Source dB Level <span class="val" id="db-src-label">80 dB</span></label>
+        <input type="range" id="src-db" min="40" max="140" step="1" value="80">
+    </div>
+    <div class="control">
+        <label>Wave Frequency <span class="val" id="freq-label">2 Hz</span></label>
+        <input type="range" id="freq" min="1" max="5" step="0.5" value="2">
+    </div>
+    <div class="control">
+        <label>Wave Speed <span class="val" id="speed-label">1.5x</span></label>
+        <input type="range" id="speed" min="0.5" max="3" step="0.5" value="1.5">
+    </div>
+    <div class="control">
+        <label>Absorption Rate <span class="val" id="absorb-label">0.05</span></label>
+        <input type="range" id="absorb" min="0.01" max="0.15" step="0.01" value="0.05">
+    </div>
+    <div class="control">
+        <label>Distance to House (m) <span class="val" id="dist-label">20 m</span></label>
+        <input type="range" id="dist" min="5" max="50" step="1" value="20">
+    </div>
+    <div class="control">
+        <label>Wall Thickness (cm) <span class="val" id="wall-label">20 cm</span></label>
+        <input type="range" id="wall-thick" min="5" max="60" step="5" value="20">
     </div>
 
-    <div id="instructions">🖱️ Left Click + Drag to Rotate | 🖱️ Right Click to Pan | 🖱️ Scroll to Zoom</div>
+    <div style="margin-top:10px; font-size:11px; color:#aaa; margin-bottom:4px;">Mode:</div>
+    <button class="btn active" id="btn-spread" onclick="setMode('spread')">Spread</button>
+    <button class="btn" id="btn-wall" onclick="setMode('wall')">Wall</button>
+    <button class="btn" id="btn-absorb" onclick="setMode('absorb')">Absorb</button>
+    <button class="btn" id="btn-diffract" onclick="setMode('diffract')">Diffract</button>
+    <button class="btn" id="btn-house" onclick="setMode('house')">🏠 House</button>
 
-    <div id="canvas-container"></div>
+    <div style="margin-top:8px;">
+        <button class="btn" onclick="resetWaves()">↺ Reset</button>
+        <button class="btn" onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+    </div>
+</div>
 
-    <script>
-        // --- 1. Basic Setup & High-End Renderer ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x5ab2e6); // Richer sky blue
-        scene.fog = new THREE.FogExp2(0x5ab2e6, 0.008); // Better depth fog
+<div id="stats">
+    <h3>📊 Live Statistics</h3>
+    <div class="stat-row">
+        <span class="stat-label">Source Level</span>
+        <span class="stat-val" id="st-src">80 dB</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">At Distance</span>
+        <span class="stat-val" id="st-dist">-- dB</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">After Wall/Mat</span>
+        <span class="stat-val" id="st-after">-- dB</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Inside House</span>
+        <span class="stat-val" id="st-inside">-- dB</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">dB Reduction</span>
+        <span class="stat-val" id="st-reduction">-- dB</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Wave Energy</span>
+        <span class="stat-val" id="st-energy">--</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Active Waves</span>
+        <span class="stat-val" id="st-waves">0</span>
+    </div>
+    <div id="db-meter">
+        <label>Indoor dB Meter</label>
+        <div id="db-bar-bg"><div id="db-bar"></div></div>
+    </div>
+</div>
 
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(-30, 25, 45); // Better starting angle
+<div id="house-panel">
+    <h3>🏠 Indoor Sound Impact</h3>
+    <div class="house-row">
+        <span class="house-label">Sound Level</span>
+        <span class="house-val" id="h-level">-- dB</span>
+    </div>
+    <div class="house-row">
+        <span class="house-label">Perception</span>
+        <span class="house-val" id="h-perception">--</span>
+    </div>
+    <div class="house-row">
+        <span class="house-label">Comparable To</span>
+        <span class="house-val" id="h-compare" style="color:#ccaaff">--</span>
+    </div>
+    <div class="house-row">
+        <span class="house-label">Sleep Impact</span>
+        <span class="house-val" id="h-sleep">--</span>
+    </div>
+    <div class="house-row">
+        <span class="house-label">Health Risk</span>
+        <span class="house-val" id="h-health">--</span>
+    </div>
+    <div id="house-desc">--</div>
+</div>
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft, realistic shadows
-        renderer.outputEncoding = THREE.sRGBEncoding; // Accurate colors
-        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic lighting
-        renderer.toneMappingExposure = 1.0;
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
+<div id="legend">
+    <div class="leg-item"><div class="leg-color" style="background:#ffff44"></div> Sound Source</div>
+    <div class="leg-item"><div class="leg-color" style="background:#44aaff"></div> Wave (high energy)</div>
+    <div class="leg-item"><div class="leg-color" style="background:#224488"></div> Wave (low energy)</div>
+    <div class="leg-item"><div class="leg-color" style="background:#cc4422"></div> Wall / Barrier</div>
+    <div class="leg-item"><div class="leg-color" style="background:#228844"></div> Absorbing Material</div>
+    <div class="leg-item"><div class="leg-color" style="background:#8844cc"></div> 🏠 House Wall</div>
+</div>
 
-        // --- 2. Camera Controls ---
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 - 0.02; // Prevent going beneath ground
-        controls.minDistance = 10;
-        controls.maxDistance = 150;
-        controls.target.set(0, 0, 5); // Look slightly towards the house
+<div id="info-bar">Drag to rotate · Scroll to zoom</div>
 
-        // --- 3. Enhanced Lighting ---
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-        hemiLight.position.set(0, 50, 0);
-        scene.add(hemiLight);
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
 
-        const dirLight = new THREE.DirectionalLight(0xfffaed, 1.2); // Warm sunlight
-        dirLight.position.set(40, 60, -20);
-        dirLight.castShadow = true;
-        // High-res shadows
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.left = -50;
-        dirLight.shadow.camera.right = 50;
-        dirLight.shadow.camera.top = 50;
-        dirLight.shadow.camera.bottom = -50;
-        dirLight.shadow.bias = -0.0005; // Prevent shadow acne
-        scene.add(dirLight);
+// ── SCENE ──────────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a1a);
+scene.fog = new THREE.Fog(0x0a0a1a, 90, 160);
 
-        // --- 4. Detailed Environment ---
-        // Lush Ground
-        const groundGeo = new THREE.PlaneGeometry(200, 200);
-        const groundMat = new THREE.MeshStandardMaterial({ 
-            color: 0x477a33, 
-            roughness: 0.9, 
-            metalness: 0.1 
-        });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        scene.add(ground);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(0, 35, 70);
+camera.lookAt(0, 0, 0);
 
-        // Detailed Highway
-        const roadGroup = new THREE.Group();
-        roadGroup.position.set(0, 0.1, -10);
-        
-        // Main Asphalt
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.7 });
-        const road = new THREE.Mesh(new THREE.PlaneGeometry(200, 14), roadMat);
-        road.rotation.x = -Math.PI / 2;
-        road.receiveShadow = true;
-        roadGroup.add(road);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
 
-        // Center dashed yellow line
-        for(let i = -100; i < 100; i += 6) {
-            const line = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.3), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
-            line.rotation.x = -Math.PI / 2;
-            line.position.set(i, 0.02, 0);
-            roadGroup.add(line);
+scene.add(new THREE.AmbientLight(0x223355, 1.2));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(20, 40, 20);
+scene.add(dirLight);
+
+const gridHelper = new THREE.GridHelper(120, 24, 0x223344, 0x111a22);
+scene.add(gridHelper);
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let mode = 'spread';
+let paused = false;
+let waves = [];
+let sceneObjects = [];
+let time = 0;
+let spawnTimer = 0;
+let avgEnergy = 0;
+
+// ── SOURCE ─────────────────────────────────────────────────────────────────
+const srcGeo = new THREE.SphereGeometry(1.2, 16, 16);
+const srcMat = new THREE.MeshPhongMaterial({ color: 0xffff44, emissive: 0xaaaa00 });
+const srcMesh = new THREE.Mesh(srcGeo, srcMat);
+srcMesh.position.set(-22, 0, 0);
+scene.add(srcMesh);
+
+const glowGeo = new THREE.SphereGeometry(2, 16, 16);
+const glowMat = new THREE.MeshPhongMaterial({ color: 0xffff00, emissive: 0xffaa00, transparent: true, opacity: 0.25 });
+const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+glowMesh.position.copy(srcMesh.position);
+scene.add(glowMesh);
+
+// ── SLIDERS ─────────────────────────────────────────────────────────────────
+function getVal(id) { return parseFloat(document.getElementById(id).value); }
+
+document.getElementById('src-db').addEventListener('input', e => {
+    document.getElementById('db-src-label').textContent = e.target.value + ' dB';
+});
+document.getElementById('freq').addEventListener('input', e => {
+    document.getElementById('freq-label').textContent = e.target.value + ' Hz';
+});
+document.getElementById('speed').addEventListener('input', e => {
+    document.getElementById('speed-label').textContent = e.target.value + 'x';
+});
+document.getElementById('absorb').addEventListener('input', e => {
+    document.getElementById('absorb-label').textContent = e.target.value;
+});
+document.getElementById('dist').addEventListener('input', e => {
+    document.getElementById('dist-label').textContent = e.target.value + ' m';
+    updateHousePosition();
+});
+document.getElementById('wall-thick').addEventListener('input', e => {
+    document.getElementById('wall-label').textContent = e.target.value + ' cm';
+});
+
+// ── WAVES ──────────────────────────────────────────────────────────────────
+function createWaveRing() {
+    const geo = new THREE.TorusGeometry(1.2, 0.2, 8, 52);
+    const mat = new THREE.MeshPhongMaterial({
+        color: 0x44aaff,
+        emissive: 0x44aaff,
+        emissiveIntensity: 0.8,
+        transparent: true,
+        opacity: 0.85
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.y = Math.PI / 2;
+    mesh.position.copy(srcMesh.position);
+    scene.add(mesh);
+    return { mesh, radius: 1.2, energy: 1.0, alive: true };
+}
+
+function spawnWave() {
+    waves.push(createWaveRing());
+}
+
+// ── SCENE OBJECTS ──────────────────────────────────────────────────────────
+let houseMeshes = [];
+let houseX = 0;
+
+function clearScene() {
+    sceneObjects.forEach(o => scene.remove(o));
+    sceneObjects = [];
+    houseMeshes.forEach(h => scene.remove(h));
+    houseMeshes = [];
+}
+
+function addWall(x, color, emissive, opacity) {
+    const geo = new THREE.BoxGeometry(1.5, 10, 34);
+    const mat = new THREE.MeshPhongMaterial({
+        color, emissive,
+        transparent: opacity < 1,
+        opacity: opacity !== undefined ? opacity : 1
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, 0, 0);
+    scene.add(mesh);
+    sceneObjects.push(mesh);
+    return mesh;
+}
+
+function addAbsorber(x) {
+    const geo = new THREE.BoxGeometry(2, 10, 34);
+    const mat = new THREE.MeshPhongMaterial({ color: 0x228844, emissive: 0x114422, transparent: true, opacity: 0.85 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, 0, 0);
+    scene.add(mesh);
+    sceneObjects.push(mesh);
+}
+
+function addDiffractWall(x) {
+    const mat = new THREE.MeshPhongMaterial({ color: 0xcc4422, emissive: 0x441100 });
+    [-12, 12].forEach(zOff => {
+        const geo = new THREE.BoxGeometry(1.5, 10, 11);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, 0, zOff);
+        scene.add(mesh);
+        sceneObjects.push(mesh);
+    });
+}
+
+function buildHouse(x) {
+    houseX = x;
+    houseMeshes.forEach(h => scene.remove(h));
+    houseMeshes = [];
+
+    const wallMat = new THREE.MeshPhongMaterial({ color: 0x8844cc, emissive: 0x220044, transparent: true, opacity: 0.6 });
+    const wallThick = getVal('wall-thick') / 100 * 3; // scale to scene units
+
+    // Front wall
+    const fw = new THREE.Mesh(new THREE.BoxGeometry(wallThick, 10, 24), wallMat);
+    fw.position.set(x, 0, 0);
+    scene.add(fw); houseMeshes.push(fw);
+
+    // Back wall
+    const bw = new THREE.Mesh(new THREE.BoxGeometry(wallThick, 10, 24), wallMat);
+    bw.position.set(x + 14, 0, 0);
+    scene.add(bw); houseMeshes.push(bw);
+
+    // Side walls
+    [-12, 12].forEach(z => {
+        const sw = new THREE.Mesh(new THREE.BoxGeometry(14, 10, wallThick), wallMat);
+        sw.position.set(x + 7, 0, z);
+        scene.add(sw); houseMeshes.push(sw);
+    });
+
+    // Roof
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(14, 0.5, 24), new THREE.MeshPhongMaterial({ color: 0x553388, transparent: true, opacity: 0.45 }));
+    roof.position.set(x + 7, 5.25, 0);
+    scene.add(roof); houseMeshes.push(roof);
+
+    // Label indicator
+    const indGeo = new THREE.SphereGeometry(0.7, 8, 8);
+    const indMat = new THREE.MeshPhongMaterial({ color: 0xffaaff, emissive: 0xaa44aa });
+    const ind = new THREE.Mesh(indGeo, indMat);
+    ind.position.set(x + 7, 7, 0);
+    scene.add(ind); houseMeshes.push(ind);
+}
+
+function updateHousePosition() {
+    const dist = getVal('dist');
+    const x = srcMesh.position.x + dist * 0.9;
+    if (houseMeshes.length > 0) buildHouse(x);
+}
+
+// ── MODES ──────────────────────────────────────────────────────────────────
+const modeDescriptions = {
+    spread: "Sound spreads freely — energy drops with distance (inverse square law).",
+    wall: "Solid wall reflects & absorbs. Energy drops sharply beyond barrier.",
+    absorb: "Foam/material absorbs sound — energy drains rapidly on contact.",
+    diffract: "Gap in wall lets sound bend through edges — classic diffraction.",
+    house: "Full house model — see how walls attenuate indoor sound levels."
+};
+
+function setMode(m) {
+    mode = m;
+    clearScene();
+    resetWaves();
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + m).classList.add('active');
+
+    if (m === 'wall') addWall(0, 0xcc4422, 0x441100, 1);
+    if (m === 'absorb') addAbsorber(0);
+    if (m === 'diffract') addDiffractWall(0);
+    if (m === 'house') {
+        const dist = getVal('dist');
+        buildHouse(srcMesh.position.x + dist * 0.9);
+    }
+}
+
+function resetWaves() {
+    waves.forEach(w => scene.remove(w.mesh));
+    waves = [];
+    time = 0;
+    spawnTimer = 0;
+}
+
+function togglePause() {
+    paused = !paused;
+    document.getElementById('pauseBtn').textContent = paused ? '▶ Resume' : '⏸ Pause';
+}
+
+// ── dB MATH ────────────────────────────────────────────────────────────────
+function dbAtDistance(srcDb, distM) {
+    // Inverse square law: dB drops by 6dB per doubling of distance
+    // Reference distance = 1m
+    if (distM <= 0) return srcDb;
+    return srcDb - 20 * Math.log10(distM);
+}
+
+function wallAttenuation(thicknessCm) {
+    // Rough: standard brick ~45dB per 20cm, scales linearly-ish
+    return Math.min(60, (thicknessCm / 20) * 40 + 5);
+}
+
+function modeAttenuation() {
+    // Extra reduction based on mode
+    const absorb = getVal('absorb');
+    switch (mode) {
+        case 'spread': return 0;
+        case 'wall': return 15 + absorb * 80;
+        case 'absorb': return 25 + absorb * 150;
+        case 'diffract': return 8 + absorb * 40;
+        case 'house': return 0; // handled separately by wall
+        default: return 0;
+    }
+}
+
+function getIndoorDb() {
+    const srcDb = getVal('src-db');
+    const distM = getVal('dist');
+    const wallCm = getVal('wall-thick');
+
+    const atDist = dbAtDistance(srcDb, distM);
+    const modeAtt = modeAttenuation();
+    const afterMode = atDist - modeAtt;
+
+    let indoorDb = afterMode;
+    if (mode === 'house') {
+        indoorDb = afterMode - wallAttenuation(wallCm);
+    }
+
+    return {
+        src: srcDb,
+        atDist: Math.round(atDist * 10) / 10,
+        afterMode: Math.round(afterMode * 10) / 10,
+        indoor: Math.round(Math.max(0, indoorDb) * 10) / 10,
+        reduction: Math.round((srcDb - Math.max(0, indoorDb)) * 10) / 10
+    };
+}
+
+function dbToPercent(db) {
+    // Map 0–130dB to 0–100%
+    return Math.min(100, Math.max(0, (db / 130) * 100));
+}
+
+function dbColor(db) {
+    if (db < 40) return '#44ff88';
+    if (db < 60) return '#aaff44';
+    if (db < 75) return '#ffcc44';
+    if (db < 90) return '#ff8844';
+    return '#ff3333';
+}
+
+function dbClass(db) {
+    if (db < 40) return 'comfort';
+    if (db < 60) return 'ok';
+    if (db < 75) return 'loud';
+    return 'danger';
+}
+
+function dbPerception(db) {
+    if (db < 20) return 'Near Silent';
+    if (db < 35) return 'Very Quiet';
+    if (db < 45) return 'Quiet';
+    if (db < 55) return 'Moderate';
+    if (db < 65) return 'Noticeable';
+    if (db < 75) return 'Loud';
+    if (db < 85) return 'Very Loud';
+    if (db < 100) return 'Extremely Loud';
+    return '⚠ Dangerous';
+}
+
+function dbCompare(db) {
+    if (db < 20) return 'Recording studio';
+    if (db < 30) return 'Whisper nearby';
+    if (db < 40) return 'Library';
+    if (db < 50) return 'Quiet office';
+    if (db < 55) return 'Normal conversation';
+    if (db < 65) return 'TV at normal volume';
+    if (db < 75) return 'Vacuum cleaner';
+    if (db < 85) return 'Busy restaurant';
+    if (db < 95) return 'Lawn mower';
+    if (db < 105) return 'Motorcycle nearby';
+    if (db < 115) return 'Live concert';
+    return 'Jet engine / Thunder';
+}
+
+function dbSleepImpact(db) {
+    if (db < 30) return '✅ No impact';
+    if (db < 40) return '🟡 Slight';
+    if (db < 55) return '🟠 Moderate disruption';
+    if (db < 65) return '🔴 Significant';
+    return '🔴 Severe disruption';
+}
+
+function dbHealthRisk(db) {
+    if (db < 55) return '✅ Safe';
+    if (db < 70) return '🟡 Low risk';
+    if (db < 85) return '🟠 Caution';
+    if (db < 95) return '🔴 Hearing risk';
+    return '🔴 Immediate risk';
+}
+
+function dbHouseDesc(db, mode) {
+    let base = '';
+    if (db < 35) base = 'Indoor level is very comfortable. Ideal for sleep and concentration.';
+    else if (db < 50) base = 'Acceptable indoor levels. Most people can sleep and work normally.';
+    else if (db < 60) base = 'Noticeable but tolerable. Conversation still easy. May bother light sleepers.';
+    else if (db < 70) base = 'Loud indoors. TV needs to be turned up. Sleep difficult for many people.';
+    else if (db < 80) base = 'Very loud inside. Prolonged exposure can cause stress and hearing fatigue.';
+    else base = '⚠ Dangerously loud indoors. Immediate action recommended — more insulation or source reduction needed.';
+
+    const modeNote = {
+        spread: ' (No barriers — full sound transmission)',
+        wall: ' (Partial reflection from barrier)',
+        absorb: ' (Absorption material reducing energy)',
+        diffract: ' (Diffraction through wall gap)',
+        house: ' (House wall providing insulation)'
+    };
+    return base + (modeNote[mode] || '');
+}
+
+// ── STATS UPDATE ───────────────────────────────────────────────────────────
+function updateStats() {
+    const db = getIndoorDb();
+
+    document.getElementById('st-src').textContent = db.src + ' dB';
+    document.getElementById('st-dist').textContent = db.atDist + ' dB';
+    document.getElementById('st-after').textContent = db.afterMode + ' dB';
+    document.getElementById('st-inside').textContent = db.indoor + ' dB';
+    document.getElementById('st-reduction').textContent = db.reduction + ' dB';
+    document.getElementById('st-waves').textContent = waves.length;
+
+    const avgE = waves.length > 0 ? waves.reduce((s, w) => s + w.energy, 0) / waves.length : 0;
+    document.getElementById('st-energy').textContent = (avgE * 100).toFixed(1) + '%';
+
+    // Color stat vals
+    const insideEl = document.getElementById('st-inside');
+    insideEl.style.color = dbColor(db.indoor);
+
+    // dB bar
+    const bar = document.getElementById('db-bar');
+    const pct = dbToPercent(db.indoor);
+    bar.style.width = pct + '%';
+    bar.style.background = dbColor(db.indoor);
+
+    // House panel
+    document.getElementById('h-level').textContent = db.indoor + ' dB';
+    document.getElementById('h-level').className = 'house-val ' + dbClass(db.indoor);
+    document.getElementById('h-level').style.color = dbColor(db.indoor);
+
+    document.getElementById('h-perception').textContent = dbPerception(db.indoor);
+    document.getElementById('h-perception').style.color = dbColor(db.indoor);
+
+    document.getElementById('h-compare').textContent = dbCompare(db.indoor);
+    document.getElementById('h-sleep').textContent = dbSleepImpact(db.indoor);
+    document.getElementById('h-sleep').style.color = db.indoor < 40 ? '#44ff88' : db.indoor < 55 ? '#ffcc44' : '#ff4444';
+
+    document.getElementById('h-health').textContent = dbHealthRisk(db.indoor);
+    document.getElementById('h-health').style.color = dbColor(db.indoor);
+
+    document.getElementById('house-desc').textContent = dbHouseDesc(db.indoor, mode);
+}
+
+// ── ORBIT ──────────────────────────────────────────────────────────────────
+let isDragging = false;
+let prevMouse = { x: 0, y: 0 };
+let spherical = { theta: 0.2, phi: 0.85, radius: 70 };
+
+renderer.domElement.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+renderer.domElement.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    spherical.theta -= (e.clientX - prevMouse.x) * 0.008;
+    spherical.phi = Math.max(0.1, Math.min(1.4, spherical.phi - (e.clientY - prevMouse.y) * 0.008));
+    prevMouse = { x: e.clientX, y: e.clientY };
+});
+renderer.domElement.addEventListener('wheel', e => {
+    spherical.radius = Math.max(20, Math.min(130, spherical.radius + e.deltaY * 0.1));
+});
+
+// Touch support
+renderer.domElement.addEventListener('touchstart', e => {
+    isDragging = true;
+    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+});
+renderer.domElement.addEventListener('touchend', () => isDragging = false);
+renderer.domElement.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    spherical.theta -= (e.touches[0].clientX - prevMouse.x) * 0.008;
+    spherical.phi = Math.max(0.1, Math.min(1.4, spherical.phi - (e.touches[0].clientY - prevMouse.y) * 0.008));
+    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+});
+
+// ── MAIN LOOP ──────────────────────────────────────────────────────────────
+function animate() {
+    requestAnimationFrame(animate);
+
+    if (!paused) {
+        time += 0.016;
+        spawnTimer += 0.016;
+
+        const freq = getVal('freq');
+        const speed = getVal('speed');
+        const absorbRate = getVal('absorb');
+
+        if (spawnTimer > 1 / freq) {
+            spawnWave();
+            spawnTimer = 0;
         }
 
-        // Solid white edge lines
-        const edgeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const edge1 = new THREE.Mesh(new THREE.PlaneGeometry(200, 0.3), edgeMat);
-        edge1.rotation.x = -Math.PI / 2;
-        edge1.position.set(0, 0.02, -6);
-        roadGroup.add(edge1);
-        
-        const edge2 = edge1.clone();
-        edge2.position.set(0, 0.02, 6);
-        roadGroup.add(edge2);
+        // Glow pulse
+        const pulse = 0.85 + 0.28 * Math.sin(time * freq * 5);
+        glowMesh.scale.setScalar(pulse);
+        glowMat.opacity = 0.15 + 0.18 * Math.abs(Math.sin(time * freq * 5));
 
-        scene.add(roadGroup);
+        // Wave update
+        for (let i = waves.length - 1; i >= 0; i--) {
+            const w = waves[i];
+            if (!w.alive) { scene.remove(w.mesh); waves.splice(i, 1); continue; }
 
-        // Detailed House
-        const houseGroup = new THREE.Group();
-        houseGroup.position.set(0, 0, 18);
-        
-        // Main body
-        const base = new THREE.Mesh(
-            new THREE.BoxGeometry(8, 5, 6),
-            new THREE.MeshStandardMaterial({ color: 0xeaeaea, roughness: 0.8 })
-        );
-        base.position.y = 2.5;
-        base.castShadow = true;
-        base.receiveShadow = true;
-        houseGroup.add(base);
+            w.radius += speed * 0.32;
+            w.mesh.scale.setScalar(w.radius / 1.2);
 
-        // Roof
-        const roof = new THREE.Mesh(
-            new THREE.ConeGeometry(6.5, 3.5, 4),
-            new THREE.MeshStandardMaterial({ color: 0x3d3d3d, roughness: 0.9 })
-        );
-        roof.position.y = 6.75;
-        roof.rotation.y = Math.PI / 4;
-        roof.castShadow = true;
-        houseGroup.add(roof);
+            // Base inverse square decay
+            w.energy -= 0.003 * speed;
 
-        // Door
-        const door = new THREE.Mesh(
-            new THREE.BoxGeometry(1.5, 3, 0.2),
-            new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.7 })
-        );
-        door.position.set(0, 1.5, -3.01);
-        houseGroup.add(door);
+            // Barrier interactions
+            const distFromSrc = w.radius; // radius is roughly distance from source
 
-        // Windows (Glowing)
-        const windowMat = new THREE.MeshStandardMaterial({ color: 0xffeebb, emissive: 0xaa8822, roughness: 0.1 });
-        const win1 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), windowMat);
-        win1.position.set(-2.5, 2.5, -3.01);
-        win1.rotation.y = Math.PI;
-        houseGroup.add(win1);
-        
-        const win2 = win1.clone();
-        win2.position.set(2.5, 2.5, -3.01);
-        houseGroup.add(win2);
-
-        // Chimney
-        const chimney = new THREE.Mesh(
-            new THREE.BoxGeometry(1, 4, 1),
-            new THREE.MeshStandardMaterial({ color: 0x8b3a3a })
-        );
-        chimney.position.set(-2.5, 6, 1);
-        chimney.castShadow = true;
-        houseGroup.add(chimney);
-
-        scene.add(houseGroup);
-
-        // --- 5. Mitigation Objects (Detailed) ---
-        // Concrete Sound Wall
-        const wallGroup = new THREE.Group();
-        wallGroup.position.set(0, 0, -2);
-        wallGroup.visible = false;
-
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x88929e, roughness: 0.9 });
-        for(let i = -60; i <= 60; i += 4) {
-            const panel = new THREE.Mesh(new THREE.BoxGeometry(3.9, 6, 0.8), wallMat);
-            panel.position.set(i, 3, 0);
-            panel.castShadow = true;
-            panel.receiveShadow = true;
-            wallGroup.add(panel);
-            
-            // Pillar
-            const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x64748b }));
-            pillar.position.set(i + 2, 3.1, 0);
-            pillar.castShadow = true;
-            wallGroup.add(pillar);
-        }
-        scene.add(wallGroup);
-
-        // Pine Trees
-        const treesGroup = new THREE.Group();
-        treesGroup.visible = false;
-        
-        function createPineTree(x, z) {
-            const tree = new THREE.Group();
-            
-            const trunk = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.3, 0.4, 2),
-                new THREE.MeshStandardMaterial({ color: 0x4a3b2c, roughness: 1 })
-            );
-            trunk.position.y = 1;
-            trunk.castShadow = true;
-            tree.add(trunk);
-
-            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 0.8 });
-            
-            const leaves1 = new THREE.Mesh(new THREE.ConeGeometry(2, 3, 8), leafMat);
-            leaves1.position.y = 2.5;
-            leaves1.castShadow = true;
-            tree.add(leaves1);
-
-            const leaves2 = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.5, 8), leafMat);
-            leaves2.position.y = 4;
-            leaves2.castShadow = true;
-            tree.add(leaves2);
-
-            const leaves3 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), leafMat);
-            leaves3.position.y = 5.5;
-            leaves3.castShadow = true;
-            tree.add(leaves3);
-
-            tree.position.set(x, 0, z);
-            
-            // Randomize size slightly
-            const scale = 0.8 + Math.random() * 0.5;
-            tree.scale.set(scale, scale, scale);
-            
-            return tree;
-        }
-
-        // Plant a thick buffer zone
-        for (let i = -40; i <= 40; i += 6) {
-            treesGroup.add(createPineTree(i + (Math.random()*2), 3 + (Math.random()*2)));
-            treesGroup.add(createPineTree(i + 3 + (Math.random()*2), 6 + (Math.random()*2)));
-        }
-        scene.add(treesGroup);
-
-        // --- 6. Advanced Traffic System ---
-        const cars = [];
-        const carColors = [0xb91d47, 0x1d47b9, 0xeeeeee, 0x2b572a, 0xe3a21a, 0x111111];
-
-        const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-        const glassMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.1, metalness: 0.8 });
-
-        function createDetailedCar(zPos, direction) {
-            const carGroup = new THREE.Group();
-            const paintColor = carColors[Math.floor(Math.random() * carColors.length)];
-            const bodyMat = new THREE.MeshStandardMaterial({ color: paintColor, roughness: 0.2, metalness: 0.6 });
-
-            // Lower body
-            const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1, 2), bodyMat);
-            body.position.y = 0.9;
-            body.castShadow = true;
-            carGroup.add(body);
-
-            // Cabin / Glass
-            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.8, 1.8), glassMat);
-            cabin.position.set((direction === 1 ? -0.5 : 0.5), 1.8, 0); // Cabin shifted back
-            cabin.castShadow = true;
-            carGroup.add(cabin);
-
-            // Wheels
-            const wheelPositions = [
-                [-1.5, 0.5, 1], [1.5, 0.5, 1],
-                [-1.5, 0.5, -1], [1.5, 0.5, -1]
-            ];
-            wheelPositions.forEach(pos => {
-                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-                wheel.rotation.x = Math.PI / 2;
-                wheel.position.set(...pos);
-                wheel.castShadow = true;
-                carGroup.add(wheel);
-            });
-
-            // Headlights
-            const headLightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff });
-            const tailLightMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xaa0000 });
-            
-            const hl1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.4), headLightMat);
-            hl1.position.set(direction === 1 ? 2.25 : -2.25, 1, 0.7);
-            carGroup.add(hl1);
-            
-            const hl2 = hl1.clone();
-            hl2.position.set(direction === 1 ? 2.25 : -2.25, 1, -0.7);
-            carGroup.add(hl2);
-
-            const tl1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.4), tailLightMat);
-            tl1.position.set(direction === 1 ? -2.25 : 2.25, 1, 0.7);
-            carGroup.add(tl1);
-
-            const tl2 = tl1.clone();
-            tl2.position.set(direction === 1 ? -2.25 : 2.25, 1, -0.7);
-            carGroup.add(tl2);
-
-            carGroup.position.set(direction * 80, 0, zPos);
-            scene.add(carGroup);
-            
-            cars.push({ 
-                mesh: carGroup, 
-                direction: direction, 
-                baseSpeed: 0.6 + Math.random() * 0.3 
-            });
-        }
-
-        // Spawn cars
-        for(let i=0; i<4; i++) createDetailedCar(-13, 1);  // Eastbound
-        for(let i=0; i<4; i++) createDetailedCar(-7, -1); // Westbound
-
-        // Randomize initial positions
-        cars.forEach(car => car.mesh.position.x = (Math.random() - 0.5) * 160);
-
-        // --- 7. Upgraded Noise Visualizer (Forcefield effect) ---
-        const auraGeo = new THREE.SphereGeometry(9, 64, 64);
-        const auraMat = new THREE.MeshStandardMaterial({ 
-            color: 0xff0000, 
-            transparent: true, 
-            opacity: 0.2,
-            wireframe: true,
-            emissive: 0xff0000,
-            emissiveIntensity: 0.5
-        });
-        const noiseAura = new THREE.Mesh(auraGeo, auraMat);
-        noiseAura.position.copy(houseGroup.position);
-        noiseAura.position.y += 2;
-        scene.add(noiseAura);
-
-        // --- 8. Simulation Logic ---
-        let currentNoise = 85; 
-        let speedMultiplier = 1;
-        let houseShakeAmount = 0.1;
-
-        const wallCheck = document.getElementById('toggle-wall');
-        const treesCheck = document.getElementById('toggle-trees');
-        const speedCheck = document.getElementById('toggle-speed');
-        const noiseValue = document.getElementById('noise-value');
-        const noiseBar = document.getElementById('noise-bar');
-        const noiseStatus = document.getElementById('noise-status');
-
-        function updateSimulationState() {
-            let noise = 85; 
-            speedMultiplier = 1;
-
-            if (speedCheck.checked) {
-                noise -= 15;
-                speedMultiplier = 0.35; // Slow down cars
+            if (mode === 'wall') {
+                const wallDist = 22; // source is at -22, wall at 0
+                if (distFromSrc > wallDist) w.energy -= 0.035 * speed;
             }
-            if (wallCheck.checked) {
-                noise -= 20;
-                wallGroup.visible = true;
-            } else {
-                wallGroup.visible = false;
+            if (mode === 'absorb') {
+                const absDist = 22;
+                if (distFromSrc > absDist) w.energy -= absorbRate * speed * 1.4;
             }
-            if (treesCheck.checked) {
-                noise -= 10;
-                treesGroup.visible = true;
-            } else {
-                treesGroup.visible = false;
+            if (mode === 'diffract') {
+                const wallDist = 22;
+                if (distFromSrc > wallDist) w.energy -= 0.018 * speed;
             }
-
-            currentNoise = noise;
-            noiseValue.innerText = currentNoise;
-            
-            let percentage = ((currentNoise - 40) / 50) * 100;
-            percentage = Math.max(0, Math.min(100, percentage));
-            noiseBar.style.width = percentage + "%";
-
-            // Update UI & Aura Colors
-            if (currentNoise >= 75) {
-                noiseBar.style.backgroundColor = "#ef4444"; // Red
-                noiseStatus.innerText = "Harmful - Disturbs Sleep & Health";
-                noiseStatus.style.color = "#ef4444";
-                auraMat.color.setHex(0xff0000); 
-                auraMat.emissive.setHex(0xff0000);
-                houseShakeAmount = 0.08;
-            } else if (currentNoise >= 55) {
-                noiseBar.style.backgroundColor = "#f59e0b"; // Orange
-                noiseStatus.innerText = "Moderate - Annoying Background";
-                noiseStatus.style.color = "#f59e0b";
-                auraMat.color.setHex(0xff9900); 
-                auraMat.emissive.setHex(0xff9900);
-                houseShakeAmount = 0.02;
-            } else {
-                noiseBar.style.backgroundColor = "#10b981"; // Green
-                noiseStatus.innerText = "Quiet - Peaceful Living";
-                noiseStatus.style.color = "#10b981";
-                auraMat.color.setHex(0x00ff00); 
-                auraMat.emissive.setHex(0x00ff00);
-                houseShakeAmount = 0;
+            if (mode === 'house') {
+                const houseDist = getVal('dist') * 0.85;
+                if (distFromSrc > houseDist) w.energy -= 0.028 * speed;
             }
 
-            // Aura opacity
-            auraMat.opacity = Math.max(0.02, (currentNoise - 40) / 120);
+            // General absorption
+            w.energy -= absorbRate * 0.008;
+
+            // Color by energy
+            const e = Math.max(0, Math.min(1, w.energy));
+            const c = new THREE.Color().lerpColors(new THREE.Color(0x112244), new THREE.Color(0x44ccff), e);
+            w.mesh.material.color.set(c);
+            w.mesh.material.emissive.set(c);
+            w.mesh.material.emissiveIntensity = e * 0.9;
+            w.mesh.material.opacity = e * 0.82;
+
+            if (w.energy <= 0 || w.radius > 70) { w.alive = false; }
         }
 
-        wallCheck.addEventListener('change', updateSimulationState);
-        treesCheck.addEventListener('change', updateSimulationState);
-        speedCheck.addEventListener('change', updateSimulationState);
+        updateStats();
+    }
 
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
+    // Camera
+    camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+    camera.position.y = spherical.radius * Math.cos(spherical.phi);
+    camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+    camera.lookAt(0, 0, 0);
 
-        // --- 9. Animation Loop ---
-        const clock = new THREE.Clock();
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = clock.getElapsedTime();
+    renderer.render(scene, camera);
+}
 
-            // Update Camera Controls
-            controls.update();
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
-            // Move Cars
-            cars.forEach(car => {
-                car.mesh.position.x += car.baseSpeed * speedMultiplier * car.direction;
-                
-                // Spin wheels
-                car.mesh.children.forEach(child => {
-                    if (child.geometry.type === 'CylinderGeometry') {
-                        child.rotation.y += (car.baseSpeed * speedMultiplier) * (car.direction === 1 ? -1 : 1);
-                    }
-                });
-
-                // Loop cars
-                if (car.direction === 1 && car.mesh.position.x > 80) car.mesh.position.x = -80;
-                if (car.direction === -1 && car.mesh.position.x < -80) car.mesh.position.x = 80;
-            });
-
-            // Animate Noise Aura (Breathing/Pulsing)
-            const pulse = 1 + Math.sin(time * 3) * 0.05 * (currentNoise / 85);
-            noiseAura.scale.set(pulse, pulse, pulse);
-            noiseAura.rotation.y += 0.005;
-
-            // Shake House based on noise
-            if (houseShakeAmount > 0) {
-                houseGroup.position.x = (Math.random() - 0.5) * houseShakeAmount;
-                houseGroup.position.z = 18 + (Math.random() - 0.5) * houseShakeAmount;
-            } else {
-                houseGroup.position.x = 0;
-                houseGroup.position.z = 18;
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        // Initialize
-        updateSimulationState();
-        animate();
-
-    </script>
+setMode('spread');
+animate();
+</script>
 </body>
 </html>
