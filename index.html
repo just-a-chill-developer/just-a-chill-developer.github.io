@@ -3,7 +3,1482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Sound Wave Simulation</title>
+    <title>2D Sound Wave Simulation</title<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acoustic Environment Simulator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #eee; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  
+  #canvas { display: block; }
+  
+  #ui {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100vh;
+    background: rgba(10,10,30,0.95);
+    border-left: 1px solid #333;
+    overflow-y: auto;
+    padding: 10px;
+    z-index: 100;
+  }
+
+  #ui::-webkit-scrollbar { width: 6px; }
+  #ui::-webkit-scrollbar-track { background: #111; }
+  #ui::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+  .section {
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7eb8f7;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(126,184,247,0.3);
+  }
+
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .toggle-row label { color: #ccc; }
+
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 18px;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .slider-t {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #333;
+    border-radius: 18px;
+    transition: 0.3s;
+  }
+
+  .slider-t:before {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    left: 3px; bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+
+  input:checked + .slider-t { background: #4a90d9; }
+  input:checked + .slider-t:before { transform: translateX(18px); }
+
+  .range-row {
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .range-row .range-label {
+    display: flex;
+    justify-content: space-between;
+    color: #bbb;
+    margin-bottom: 2px;
+  }
+
+  .range-row input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: #333;
+    outline: none;
+  }
+
+  .range-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #4a90d9;
+    cursor: pointer;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .stat-box {
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 6px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .stat-box .stat-label { font-size: 9px; color: #888; text-transform: uppercase; }
+  .stat-box .stat-value { font-size: 16px; font-weight: 700; margin-top: 2px; }
+
+  .db-bar {
+    height: 6px;
+    border-radius: 3px;
+    margin-top: 3px;
+    transition: width 0.3s, background 0.3s;
+  }
+
+  .zone-stat {
+    margin-bottom: 6px;
+  }
+
+  .zone-stat .zone-name { font-size: 10px; color: #aaa; margin-bottom: 2px; display: flex; justify-content: space-between; }
+  .zone-stat .zone-bar-bg { background: #222; border-radius: 3px; height: 8px; }
+  .zone-stat .zone-bar { height: 8px; border-radius: 3px; transition: width 0.4s, background 0.4s; }
+
+  .btn {
+    background: #2a5298;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    margin: 2px;
+    transition: background 0.2s;
+  }
+
+  .btn:hover { background: #3a6bc8; }
+  .btn.danger { background: #8b2020; }
+  .btn.danger:hover { background: #b83030; }
+  .btn.success { background: #1a6b3a; }
+  .btn.success:hover { background: #2a8b4a; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: #aaa;
+  }
+
+  .legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  #minimap {
+    width: 100%;
+    height: 80px;
+    border-radius: 5px;
+    border: 1px solid #333;
+    margin-top: 5px;
+  }
+
+  .title-bar {
+    text-align: center;
+    padding: 8px;
+    background: linear-gradient(135deg, #1a3a6b, #2a5298);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+
+  .title-bar h2 { font-size: 13px; font-weight: 700; color: #7eb8f7; }
+  .title-bar p { font-size: 9px; color: #888; margin-top: 2px; }
+
+  .color-indicator {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div class="title-bar">
+    <h2>🔊 Acoustic Simulator</h2>
+    <p>Highway · Planes · Train · Barriers</p>
+  </div>
+
+  <!-- NOISE SOURCES -->
+  <div class="section">
+    <div class="section-title">🚗 Noise Sources</div>
+
+    <div class="toggle-row">
+      <label>Highway Traffic</label>
+      <label class="toggle"><input type="checkbox" id="tog_highway" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Traffic Density</span><span id="val_traffic">70%</span></div>
+      <input type="range" id="rng_traffic" min="0" max="100" value="70">
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Speed</span><span id="val_speed">80 km/h</span></div>
+      <input type="range" id="rng_speed" min="20" max="140" value="80">
+    </div>
+
+    <div class="toggle-row" style="margin-top:8px">
+      <label>✈️ Aircraft</label>
+      <label class="toggle"><input type="checkbox" id="tog_planes" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Flight Frequency</span><span id="val_planefreq">50%</span></div>
+      <input type="range" id="rng_planefreq" min="0" max="100" value="50">
+    </div>
+
+    <div class="toggle-row" style="margin-top:8px">
+      <label>🚆 Train</label>
+      <label class="toggle"><input type="checkbox" id="tog_train" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Train Speed</span><span id="val_trainspeed">60 km/h</span></div>
+      <input type="range" id="rng_trainspeed" min="10" max="200" value="60">
+    </div>
+    <div style="display:flex; gap:4px; margin-top:4px">
+      <button class="btn success" onclick="spawnTrain()">Spawn Train</button>
+      <button class="btn danger" onclick="removeTrain()">Remove Train</button>
+    </div>
+  </div>
+
+  <!-- BARRIERS -->
+  <div class="section">
+    <div class="section-title">🧱 Sound Barriers</div>
+
+    <div class="toggle-row">
+      <label><span class="color-indicator" style="background:#aaa;border:1px solid #eee;display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;"></span>Concrete Walls</label>
+      <label class="toggle"><input type="checkbox" id="tog_walls" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Wall Height</span><span id="val_wallheight">3m</span></div>
+      <input type="range" id="rng_wallheight" min="1" max="10" value="3">
+    </div>
+
+    <div class="toggle-row" style="margin-top:6px">
+      <label><span class="color-indicator" style="background:#c8a02a;display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;"></span>Absorbing Foam</label>
+      <label class="toggle"><input type="checkbox" id="tog_foam" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Absorption</span><span id="val_foam">75%</span></div>
+      <input type="range" id="rng_foam" min="0" max="100" value="75">
+    </div>
+
+    <div class="toggle-row" style="margin-top:6px">
+      <label><span class="color-indicator" style="background:#5b9bd5;display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;"></span>Deflector Panels</label>
+      <label class="toggle"><input type="checkbox" id="tog_deflect" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Deflect Angle</span><span id="val_deflect">45°</span></div>
+      <input type="range" id="rng_deflect" min="10" max="80" value="45">
+    </div>
+
+    <div class="toggle-row" style="margin-top:6px">
+      <label><span class="color-indicator" style="background:#2d7a2d;display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;"></span>Natural Barriers</label>
+      <label class="toggle"><input type="checkbox" id="tog_nature" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Vegetation Density</span><span id="val_nature">60%</span></div>
+      <input type="range" id="rng_nature" min="0" max="100" value="60">
+    </div>
+  </div>
+
+  <!-- STATISTICS -->
+  <div class="section">
+    <div class="section-title">📊 Noise Statistics</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Peak dB</div>
+        <div class="stat-value" id="stat_peak" style="color:#ff6b6b">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Average dB</div>
+        <div class="stat-value" id="stat_avg" style="color:#ffa94d">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Min dB</div>
+        <div class="stat-value" id="stat_min" style="color:#69db7c">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Sources</div>
+        <div class="stat-value" id="stat_src" style="color:#74c0fc">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZONE STATS -->
+  <div class="section">
+    <div class="section-title">📍 Zone Noise Levels</div>
+    <div id="zone_stats"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#69db7c"></div>Safe &lt;55dB</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ffd43b"></div>Moderate 55-70</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ff6b6b"></div>Loud &gt;70dB</div>
+    </div>
+  </div>
+
+  <!-- MINIMAP -->
+  <div class="section">
+    <div class="section-title">🗺️ Noise Map</div>
+    <canvas id="minimap"></canvas>
+  </div>
+
+  <!-- VIEW -->
+  <div class="section">
+    <div class="section-title">🎛️ View Options</div>
+    <div class="toggle-row">
+      <label>Sound Waves</label>
+      <label class="toggle"><input type="checkbox" id="tog_waves" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="toggle-row">
+      <label>Noise Heatmap</label>
+      <label class="toggle"><input type="checkbox" id="tog_heatmap" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="toggle-row">
+      <label>dB Labels</label>
+      <label class="toggle"><input type="checkbox" id="tog_labels" checked><span class="slider-t"></span></label>
+    </div>
+    <div class="range-row">
+      <div class="range-label"><span>Simulation Speed</span><span id="val_simspeed">1x</span></div>
+      <input type="range" id="rng_simspeed" min="1" max="5" value="1">
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const minimap = document.getElementById('minimap');
+const mctx = minimap.getContext('2d');
+
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth - 320;
+  H = canvas.height = window.innerHeight;
+  minimap.width = 290;
+  minimap.height = 80;
+}
+
+resize();
+window.addEventListener('resize', resize);
+
+// ============ CONFIG ============
+let cfg = {
+  highway: true, trafficDensity: 0.7, speed: 80,
+  planes: true, planeFreq: 0.5,
+  train: true, trainSpeed: 60,
+  walls: true, wallHeight: 3,
+  foam: true, foamAbsorb: 0.75,
+  deflect: true, deflectAngle: 45,
+  nature: true, natureDensity: 0.6,
+  waves: true, heatmap: true, labels: true,
+  simSpeed: 1
+};
+
+// ============ LAYOUT ============
+// Sky: top 35%, Ground middle 40%, Underground bottom 25%
+function getLayout() {
+  return {
+    skyTop: 0,
+    skyBottom: H * 0.35,
+    groundTop: H * 0.35,
+    groundBottom: H * 0.80,
+    trainTop: H * 0.82,
+    trainBottom: H * 0.95,
+    highwayLanes: 4,
+    laneH: (H * 0.35) / 4,
+    roadTop: H * 0.40,
+    roadBottom: H * 0.75,
+  };
+}
+
+// ============ VEHICLES ============
+class Vehicle {
+  constructor() {
+    this.lane = Math.floor(Math.random() * 4);
+    const L = getLayout();
+    this.laneH = (L.roadBottom - L.roadTop) / 4;
+    this.y = L.roadTop + this.lane * this.laneH + this.laneH * 0.5;
+    this.dir = Math.random() < 0.5 ? 1 : -1;
+    this.x = this.dir > 0 ? -80 : W + 80;
+    this.speed = (cfg.speed / 80) * (2 + Math.random()) * this.dir;
+    this.type = Math.random() < 0.15 ? 'truck' : Math.random() < 0.1 ? 'bus' : 'car';
+    this.w = this.type === 'car' ? 32 : this.type === 'bus' ? 55 : 60;
+    this.h = this.type === 'car' ? 14 : 18;
+    this.color = this.type === 'car' ?
+      ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'][Math.floor(Math.random()*6)] :
+      this.type === 'truck' ? '#7f8c8d' : '#e67e22';
+    this.db = this.type === 'truck' ? 85 : this.type === 'bus' ? 82 : 72;
+    this.waveTimer = 0;
+    this.waveInterval = 30 + Math.random() * 20;
+  }
+
+  update() {
+    this.x += this.speed * cfg.simSpeed;
+    this.waveTimer++;
+  }
+
+  isDead() {
+    return this.dir > 0 ? this.x > W + 100 : this.x < -100;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    if (this.dir < 0) ctx.scale(-1, 1);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(0, this.h/2+2, this.w/2, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.roundRect(-this.w/2, -this.h/2, this.w, this.h, 3);
+    ctx.fill();
+
+    if (this.type === 'car') {
+      // Cabin
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.roundRect(-this.w/2+6, -this.h/2-6, this.w*0.55, 8, 2);
+      ctx.fill();
+      // Lights
+      ctx.fillStyle = '#fffde7';
+      ctx.beginPath();
+      ctx.roundRect(this.w/2-5, -4, 4, 8, 1);
+      ctx.fill();
+      ctx.fillStyle = '#ff1744';
+      ctx.beginPath();
+      ctx.roundRect(-this.w/2+1, -4, 4, 8, 1);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#3498db';
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.roundRect(-this.w/2+6+i*12, -this.h/2+2, 9, 8, 1);
+        ctx.fill();
+      }
+    }
+
+    // Wheels
+    ctx.fillStyle = '#222';
+    [[-this.w/2+8, this.h/2], [this.w/2-8, this.h/2]].forEach(([wx,wy]) => {
+      ctx.beginPath();
+      ctx.arc(wx, wy, 5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#555';
+      ctx.beginPath();
+      ctx.arc(wx, wy, 2.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#222';
+    });
+
+    ctx.restore();
+  }
+
+  getNoiseAt(px, py) {
+    const dist = Math.hypot(px - this.x, py - this.y);
+    if (dist < 1) return this.db;
+    return Math.max(0, this.db - 20 * Math.log10(dist) + 20 * Math.log10(10));
+  }
+}
+
+// ============ AIRCRAFT ============
+class Aircraft {
+  constructor() {
+    const L = getLayout();
+    this.dir = Math.random() < 0.5 ? 1 : -1;
+    this.x = this.dir > 0 ? -150 : W + 150;
+    this.y = L.skyTop + (L.skyBottom - L.skyTop) * (0.15 + Math.random() * 0.55);
+    this.altitude = 200 + Math.random() * 600;
+    this.speed = (1.5 + Math.random() * 2) * this.dir;
+    this.size = 0.5 + Math.random() * 0.8;
+    this.db = 90 - (this.altitude / 1000) * 25;
+    this.contrailPoints = [];
+    this.waveTimer = 0;
+    this.engineFlicker = 0;
+  }
+
+  update() {
+    this.x += this.speed * cfg.simSpeed * 1.5;
+    this.waveTimer++;
+    this.engineFlicker = Math.random();
+    this.contrailPoints.unshift({ x: this.x - (this.dir * 30 * this.size), y: this.y });
+    if (this.contrailPoints.length > 80) this.contrailPoints.pop();
+  }
+
+  isDead() {
+    return this.dir > 0 ? this.x > W + 200 : this.x < -200;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    if (this.dir < 0) ctx.scale(-1, 1);
+    const s = this.size;
+
+    // Contrail
+    if (this.contrailPoints.length > 1) {
+      ctx.save();
+      ctx.translate(-this.x, -this.y);
+      for (let i = 0; i < this.contrailPoints.length - 1; i++) {
+        const a = 1 - i / this.contrailPoints.length;
+        ctx.beginPath();
+        ctx.moveTo(this.contrailPoints[i].x, this.contrailPoints[i].y);
+        ctx.lineTo(this.contrailPoints[i+1].x, this.contrailPoints[i+1].y);
+        ctx.strokeStyle = `rgba(255,255,255,${a * 0.4})`;
+        ctx.lineWidth = (1 - i/this.contrailPoints.length) * 3;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Fuselage
+    ctx.fillStyle = '#e8e8e8';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 28*s, 7*s, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Nose
+    ctx.fillStyle = '#ccc';
+    ctx.beginPath();
+    ctx.moveTo(28*s, 0);
+    ctx.lineTo(20*s, -3*s);
+    ctx.lineTo(20*s, 3*s);
+    ctx.fill();
+
+    // Wings
+    ctx.fillStyle = '#ddd';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-8*s, -28*s);
+    ctx.lineTo(-18*s, -26*s);
+    ctx.lineTo(-12*s, 2*s);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-8*s, 28*s);
+    ctx.lineTo(-18*s, 26*s);
+    ctx.lineTo(-12*s, -2*s);
+    ctx.fill();
+
+    // Tail
+    ctx.fillStyle = '#ccc';
+    ctx.beginPath();
+    ctx.moveTo(-22*s, 0);
+    ctx.lineTo(-28*s, -12*s);
+    ctx.lineTo(-24*s, 0);
+    ctx.fill();
+
+    // Engines
+    [-16*s, 16*s].forEach(ey => {
+      ctx.fillStyle = '#aaa';
+      ctx.beginPath();
+      ctx.ellipse(-5*s, ey, 7*s, 4*s, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Engine glow
+      ctx.fillStyle = `rgba(255,${150+this.engineFlicker*50},0,${0.3+this.engineFlicker*0.3})`;
+      ctx.beginPath();
+      ctx.arc(-10*s, ey, 4*s, 0, Math.PI*2);
+      ctx.fill();
+    });
+
+    // Windows
+    ctx.fillStyle = '#b8d4f0';
+    for (let i = -2; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.ellipse(i*6*s, -2*s, 2.5*s, 2*s, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  getNoiseAt(px, py) {
+    const dist = Math.hypot(px - this.x, py - this.y) + this.altitude * 0.3;
+    return Math.max(0, this.db - 20 * Math.log10(dist) + 20 * Math.log10(10));
+  }
+}
+
+// ============ TRAIN ============
+class Train {
+  constructor() {
+    const L = getLayout();
+    this.x = -600;
+    this.y = L.trainTop + (L.trainBottom - L.trainTop) * 0.5;
+    this.speed = cfg.trainSpeed / 30;
+    this.cars = 8 + Math.floor(Math.random() * 5);
+    this.carW = 70;
+    this.carH = 22;
+    this.gap = 6;
+    this.db = 95;
+    this.waveTimer = 0;
+    this.active = true;
+    this.steamTimer = 0;
+    this.steamParticles = [];
+    this.wheelAngle = 0;
+  }
+
+  update() {
+    this.speed = cfg.trainSpeed / 30;
+    this.x += this.speed * cfg.simSpeed;
+    this.waveTimer++;
+    this.wheelAngle += this.speed * 0.05;
+    this.steamTimer++;
+    if (this.steamTimer % 8 === 0) {
+      this.steamParticles.push({
+        x: this.x + 20, y: this.y - this.carH,
+        vx: -0.5 + Math.random(), vy: -1 - Math.random() * 1.5,
+        life: 1, r: 5 + Math.random() * 8
+      });
+    }
+    this.steamParticles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.life -= 0.015; p.r += 0.3;
+    });
+    this.steamParticles = this.steamParticles.filter(p => p.life > 0);
+    this.active = this.x < W + 800;
+  }
+
+  isDead() { return this.x > W + 800; }
+
+  drawCar(x, isLoco) {
+    const y = this.y;
+    const cw = this.carW;
+    const ch = this.carH;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + ch/2 + 4, cw/2, 5, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Car body
+    ctx.fillStyle = isLoco ? '#c0392b' : '#2c3e50';
+    ctx.beginPath();
+    ctx.roundRect(x - cw/2, y - ch/2, cw, ch, isLoco ? 4 : 2);
+    ctx.fill();
+
+    // Stripe
+    ctx.fillStyle = isLoco ? '#e74c3c' : '#34495e';
+    ctx.fillRect(x - cw/2, y - 2, cw, 4);
+
+    if (isLoco) {
+      // Cabin
+      ctx.fillStyle = '#922b21';
+      ctx.beginPath();
+      ctx.roundRect(x - cw/2 + 5, y - ch/2 - 12, cw * 0.45, 12, 2);
+      ctx.fill();
+      // Chimney
+      ctx.fillStyle = '#666';
+      ctx.fillRect(x + cw/2 - 12, y - ch/2 - 14, 8, 14);
+      ctx.fillStyle = '#444';
+      ctx.beginPath();
+      ctx.ellipse(x + cw/2 - 8, y - ch/2 - 14, 7, 4, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Headlight
+      ctx.fillStyle = '#fff9c4';
+      ctx.beginPath();
+      ctx.arc(x + cw/2 - 2, y, 5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,249,196,0.3)';
+      ctx.beginPath();
+      ctx.moveTo(x + cw/2 - 2, y);
+      ctx.arc(x + cw/2 - 2, y, 50, -0.5, 0.5);
+      ctx.fill();
+    } else {
+      // Windows
+      ctx.fillStyle = '#85c1e9';
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.roundRect(x - cw/2 + 8 + i * 14, y - ch/2 + 3, 10, 8, 1);
+        ctx.fill();
+      }
+    }
+
+    // Wheels
+    const wheelColors = ['#333', '#555'];
+    [-cw/2+10, 0, cw/2-10].forEach(wx => {
+      ctx.save();
+      ctx.translate(x + wx, y + ch/2);
+      ctx.rotate(this.wheelAngle);
+      ctx.fillStyle = wheelColors[0];
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = wheelColors[1];
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
+      ctx.moveTo(0, -4); ctx.lineTo(0, 4);
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  draw() {
+    // Rails
+    const L = getLayout();
+    const ry = this.y + this.carH/2 + 8;
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 3;
+    [-6, 6].forEach(offset => {
+      ctx.beginPath();
+      ctx.moveTo(0, ry + offset);
+      ctx.lineTo(W, ry + offset);
+      ctx.stroke();
+    });
+    // Ties
+    ctx.strokeStyle = '#5d4037';
+    ctx.lineWidth = 4;
+    for (let tx = 0; tx < W; tx += 30) {
+      ctx.beginPath();
+      ctx.moveTo(tx, ry - 10);
+      ctx.lineTo(tx, ry + 10);
+      ctx.stroke();
+    }
+
+    // Draw cars (back to front)
+    for (let i = this.cars - 1; i >= 0; i--) {
+      const cx = this.x + i * (this.carW + this.gap);
+      this.drawCar(cx, i === 0);
+    }
+
+    // Steam
+    this.steamParticles.forEach(p => {
+      ctx.fillStyle = `rgba(220,220,220,${p.life * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  getNoiseAt(px, py) {
+    // Find nearest car
+    let minDist = Infinity;
+    for (let i = 0; i < this.cars; i++) {
+      const cx = this.x + i * (this.carW + this.gap);
+      const dist = Math.hypot(px - cx, py - this.y);
+      if (dist < minDist) minDist = dist;
+    }
+    if (minDist < 1) return this.db;
+    return Math.max(0, this.db - 20 * Math.log10(minDist) + 20 * Math.log10(10));
+  }
+}
+
+// ============ SOUND WAVES ============
+class SoundWave {
+  constructor(x, y, db, color) {
+    this.x = x; this.y = y;
+    this.r = 5;
+    this.maxR = 80 + db;
+    this.alpha = 0.7;
+    this.db = db;
+    this.color = color;
+    this.speed = 1.5;
+  }
+
+  update() {
+    this.r += this.speed * cfg.simSpeed;
+    this.alpha = (1 - this.r / this.maxR) * 0.6;
+  }
+
+  isDead() { return this.r >= this.maxR; }
+
+  draw() {
+    ctx.strokeStyle = this.color.replace(')', `,${this.alpha})`).replace('rgb', 'rgba');
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+    ctx.stroke();
+  }
+}
+
+// ============ BARRIERS ============
+function getBarrierPositions() {
+  const L = getLayout();
+  return {
+    // Concrete walls on highway edges
+    wall1: { x: 0, y: L.roadTop - 5, w: W, h: 8, type: 'wall' },
+    wall2: { x: 0, y: L.roadBottom, w: W, h: 8, type: 'wall' },
+    // Foam panels between lanes
+    foam1: { x: 0, y: L.roadTop + (L.roadBottom - L.roadTop) * 0.5 - 4, w: W, h: 8, type: 'foam' },
+    // Deflectors
+    deflect1: { x: W * 0.2, y: L.roadTop - 25, w: 60, h: 20, type: 'deflect' },
+    deflect2: { x: W * 0.6, y: L.roadTop - 25, w: 60, h: 20, type: 'deflect' },
+    // Natural barriers
+    nature1: { x: 0, y: L.groundBottom - 30, w: W * 0.35, h: 30, type: 'nature' },
+    nature2: { x: W * 0.55, y: L.groundBottom - 30, w: W * 0.45, h: 30, type: 'nature' },
+  };
+}
+
+function drawBarriers() {
+  const barriers = getBarrierPositions();
+  const L = getLayout();
+
+  if (cfg.walls) {
+    [barriers.wall1, barriers.wall2].forEach(b => {
+      // Gradient concrete
+      const grad = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
+      grad.addColorStop(0, '#b8b8b8');
+      grad.addColorStop(1, '#888');
+      ctx.fillStyle = grad;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      // Brick pattern
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 0.5;
+      for (let bx = 0; bx < W; bx += 40) {
+        ctx.beginPath();
+        ctx.moveTo(bx, b.y);
+        ctx.lineTo(bx, b.y + b.h);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(0, b.y + b.h/2);
+      ctx.lineTo(W, b.y + b.h/2);
+      ctx.stroke();
+
+      // Height indicator glow
+      const hw = cfg.wallHeight / 10;
+      ctx.fillStyle = `rgba(180,180,255,${hw * 0.3})`;
+      ctx.fillRect(b.x, b.y - b.h * hw * 3, b.w, b.h * hw * 3);
+    });
+  }
+
+  if (cfg.foam) {
+    const b = barriers.foam1;
+    const foamGrad = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
+    foamGrad.addColorStop(0, '#c8a02a');
+    foamGrad.addColorStop(1, '#8b6914');
+    ctx.fillStyle = foamGrad;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    // Foam texture
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    for (let fx = 0; fx < W; fx += 12) {
+      ctx.beginPath();
+      ctx.arc(fx, b.y + b.h/2, 4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    // Absorption indicator
+    const absorb = cfg.foamAbsorb;
+    ctx.fillStyle = `rgba(200,160,42,${absorb * 0.2})`;
+    ctx.fillRect(b.x, b.y - 15 * absorb, b.w, 15 * absorb);
+  }
+
+  if (cfg.deflect) {
+    [barriers.deflect1, barriers.deflect2].forEach(b => {
+      ctx.save();
+      ctx.translate(b.x + b.w/2, b.y + b.h/2);
+      ctx.rotate(-cfg.deflectAngle * Math.PI / 180);
+      const dGrad = ctx.createLinearGradient(-b.w/2, 0, b.w/2, 0);
+      dGrad.addColorStop(0, '#5b9bd5');
+      dGrad.addColorStop(1, '#2980b9');
+      ctx.fillStyle = dGrad;
+      ctx.fillRect(-b.w/2, -b.h/2, b.w, b.h);
+      // Metallic sheen
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillRect(-b.w/2, -b.h/2, b.w, b.h/3);
+      ctx.restore();
+
+      // Direction arrows
+      ctx.fillStyle = 'rgba(91,155,213,0.4)';
+      ctx.font = '10px Arial';
+      ctx.fillText('↗', b.x + b.w/2 - 5, b.y - 5);
+    });
+  }
+
+  if (cfg.nature) {
+    const density = cfg.natureDensity;
+    [barriers.nature1, barriers.nature2].forEach(b => {
+      // Ground base
+      ctx.fillStyle = '#2d5a1b';
+      ctx.fillRect(b.x, b.y + b.h * 0.7, b.w, b.h * 0.3);
+      // Trees/bushes
+      const count = Math.floor((b.w / 25) * density);
+      const spacing = b.w / count;
+      for (let i = 0; i < count; i++) {
+        const tx = b.x + i * spacing + spacing/2;
+        const th = b.h * (0.6 + Math.random() * 0.4) * density;
+        const ty = b.y + b.h - th;
+        // Trunk
+        ctx.fillStyle = '#5d3a1a';
+        ctx.fillRect(tx - 2, ty + th * 0.6, 4, th * 0.4);
+        // Canopy layers
+        const layers = 3;
+        for (let l = 0; l < layers; l++) {
+          const lSize = (th * 0.5) * (1 - l * 0.2);
+          const lY = ty + l * th * 0.2;
+          const greenVal = 80 + l * 30;
+          ctx.fillStyle = `rgb(20,${greenVal},20)`;
+          ctx.beginPath();
+          ctx.moveTo(tx, lY - lSize * 0.5);
+          ctx.lineTo(tx - lSize * 0.6, lY + lSize * 0.3);
+          ctx.lineTo(tx + lSize * 0.6, lY + lSize * 0.3);
+          ctx.fill();
+        }
+      }
+    });
+  }
+}
+
+// ============ HEATMAP ============
+let heatmapData = null;
+let heatmapTimer = 0;
+
+function computeHeatmap() {
+  const cols = 80, rows = 40;
+  const data = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const px = (c / cols) * W;
+      const py = (r / rows) * H;
+      let db = getNoiseAt(px, py);
+      data.push({ px, py, db, cw: W/cols, ch: H/rows });
+    }
+  }
+  heatmapData = data;
+}
+
+function getNoiseAt(px, py) {
+  let totalPressure = 0;
+  let hasSource = false;
+
+  if (cfg.highway) {
+    vehicles.forEach(v => {
+      let raw = v.getNoiseAt(px, py);
+      raw = applyBarriers(raw, px, py, v.x, v.y);
+      if (raw > 0) { totalPressure += Math.pow(10, raw / 10); hasSource = true; }
+    });
+  }
+
+  if (cfg.planes) {
+    aircrafts.forEach(a => {
+      let raw = a.getNoiseAt(px, py);
+      if (raw > 0) { totalPressure += Math.pow(10, raw / 10); hasSource = true; }
+    });
+  }
+
+  if (cfg.train && train) {
+    let raw = train.getNoiseAt(px, py);
+    raw = applyBarriers(raw, px, py, train.x, train.y);
+    if (raw > 0) { totalPressure += Math.pow(10, raw / 10); hasSource = true; }
+  }
+
+  if (!hasSource) return 30 + Math.random() * 5; // ambient
+  return 10 * Math.log10(totalPressure);
+}
+
+function applyBarriers(db, px, py, sx, sy) {
+  const L = getLayout();
+  if (cfg.walls) {
+    const wallReduction = cfg.wallHeight * 2;
+    if ((py < L.roadTop - 5 && sy > L.roadTop) || (py > L.roadBottom && sy < L.roadBottom)) {
+      db -= wallReduction;
+    }
+  }
+  if (cfg.foam) {
+    const fY = L.roadTop + (L.roadBottom - L.roadTop) * 0.5;
+    if (Math.abs(py - fY) > 30 && Math.abs(sy - fY) < 30) {
+      db -= cfg.foamAbsorb * 12;
+    }
+  }
+  if (cfg.nature) {
+    const natY = L.groundBottom - 30;
+    if (py > natY + 30 && sy < natY) {
+      db -= cfg.natureDensity * 10;
+    }
+  }
+  return Math.max(0, db);
+}
+
+function dbColor(db) {
+  if (db < 40) return `rgba(30,100,30,0.3)`;
+  if (db < 55) return `rgba(50,200,50,0.35)`;
+  if (db < 65) return `rgba(200,230,50,0.4)`;
+  if (db < 75) return `rgba(255,180,0,0.45)`;
+  if (db < 85) return `rgba(255,100,0,0.5)`;
+  return `rgba(220,20,20,0.55)`;
+}
+
+function drawHeatmap() {
+  if (!heatmapData) return;
+  heatmapData.forEach(cell => {
+    ctx.fillStyle = dbColor(cell.db);
+    ctx.fillRect(cell.px, cell.py, cell.cw + 1, cell.ch + 1);
+  });
+}
+
+// ============ MEASUREMENT ZONES ============
+const zones = [
+  { name: 'Above Highway', xr: 0.1, yr: 0.05, color: '#ff6b6b' },
+  { name: 'Highway Center', xr: 0.5, yr: 0.57, color: '#ffa94d' },
+  { name: 'Roadside', xr: 0.5, yr: 0.33, color: '#ffd43b' },
+  { name: 'Near Buildings', xr: 0.8, yr: 0.55, color: '#a9e34b' },
+  { name: 'Train Area', xr: 0.5, yr: 0.88, color: '#69db7c' },
+  { name: 'Far Field', xr: 0.15, yr: 0.92, color: '#74c0fc' },
+];
+
+let zoneReadings = zones.map(() => 0);
+
+function updateZones() {
+  zones.forEach((z, i) => {
+    const px = z.xr * W, py = z.yr * H;
+    const raw = getNoiseAt(px, py);
+    zoneReadings[i] = raw;
+  });
+}
+
+function drawZoneMarkers() {
+  if (!cfg.labels) return;
+  zones.forEach((z, i) => {
+    const px = z.xr * W, py = z.yr * H;
+    const db = Math.round(zoneReadings[i]);
+
+    ctx.save();
+    const color = db < 55 ? '#69db7c' : db < 70 ? '#ffd43b' : '#ff6b6b';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.arc(px, py, 18, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.beginPath();
+    ctx.roundRect(px - 25, py - 32, 50, 20, 4);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 10px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${db}dB`, px, py - 17);
+    ctx.fillStyle = '#aaa';
+    ctx.font = '8px Segoe UI';
+    ctx.fillText(z.name, px, py - 7);
+    ctx.restore();
+  });
+}
+
+// ============ SCENE DRAWING ============
+function drawScene() {
+  const L = getLayout();
+
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, L.skyBottom);
+  skyGrad.addColorStop(0, '#0a1628');
+  skyGrad.addColorStop(0.4, '#0d2b5e');
+  skyGrad.addColorStop(1, '#1a4080');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, L.skyBottom);
+
+  // Stars
+  if (frame % 300 < 1 || !stars.length) {
+    stars = [];
+    for (let i = 0; i < 120; i++) {
+      stars.push({ x: Math.random() * W, y: Math.random() * L.skyBottom * 0.8, r: Math.random() * 1.2, twinkle: Math.random() });
+    }
+  }
+  stars.forEach(s => {
+    const a = 0.4 + 0.4 * Math.sin(frame * 0.02 + s.twinkle * 10);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Ground (between sky and train)
+  const groundGrad = ctx.createLinearGradient(0, L.groundTop, 0, L.groundBottom);
+  groundGrad.addColorStop(0, '#1a3a0a');
+  groundGrad.addColorStop(0.5, '#2d5a1b');
+  groundGrad.addColorStop(1, '#1a3a0a');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, L.groundTop, W, L.groundBottom - L.groundTop);
+
+  // Highway lanes
+  const roadGrad = ctx.createLinearGradient(0, L.roadTop, 0, L.roadBottom);
+  roadGrad.addColorStop(0, '#222');
+  roadGrad.addColorStop(0.5, '#2a2a2a');
+  roadGrad.addColorStop(1, '#222');
+  ctx.fillStyle = roadGrad;
+  ctx.fillRect(0, L.roadTop, W, L.roadBottom - L.roadTop);
+
+  // Road texture
+  ctx.fillStyle = 'rgba(255,255,255,0.01)';
+  for (let i = 0; i < W; i += 4) {
+    if (Math.random() < 0.1) {
+      ctx.fillRect(i, L.roadTop, 2, L.roadBottom - L.roadTop);
+    }
+  }
+
+  // Lane markings
+  const laneH = (L.roadBottom - L.roadTop) / 4;
+  ctx.strokeStyle = '#fff7';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([30, 25]);
+  for (let lane = 1; lane < 4; lane++) {
+    ctx.beginPath();
+    ctx.moveTo(0, L.roadTop + lane * laneH);
+    ctx.lineTo(W, L.roadTop + lane * laneH);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Road edges
+  ctx.strokeStyle = '#fff6';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, L.roadTop); ctx.lineTo(W, L.roadTop); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, L.roadBottom); ctx.lineTo(W, L.roadBottom); ctx.stroke();
+
+  // Train underpass / track area
+  const trackGrad = ctx.createLinearGradient(0, L.trainTop - 10, 0, H);
+  trackGrad.addColorStop(0, '#111');
+  trackGrad.addColorStop(1, '#0a0a0a');
+  ctx.fillStyle = trackGrad;
+  ctx.fillRect(0, L.trainTop - 10, W, H - L.trainTop + 10);
+
+  // Gravel
+  ctx.fillStyle = '#333';
+  ctx.fillRect(0, L.trainBottom, W, H - L.trainBottom);
+  for (let gx = 0; gx < W; gx += 6) {
+    ctx.fillStyle = `rgba(${80+Math.random()*40},${80+Math.random()*40},${80+Math.random()*40},0.5)`;
+    ctx.beginPath();
+    ctx.arc(gx + Math.random()*4, L.trainBottom + 5 + Math.random()*15, 2, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawBackground() {
+  // Clouds in sky
+  if (frame % 200 === 0) {
+    clouds.push({ x: -200, y: 20 + Math.random() * (H * 0.25), speed: 0.3 + Math.random() * 0.5, size: 0.5 + Math.random() * 0.8 });
+  }
+  clouds.forEach(c => {
+    c.x += c.speed * cfg.simSpeed * 0.3;
+    const s = c.size;
+    ctx.fillStyle = 'rgba(200,220,255,0.12)';
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 30*s, 0, Math.PI*2);
+    ctx.arc(c.x+25*s, c.y-8*s, 22*s, 0, Math.PI*2);
+    ctx.arc(c.x+50*s, c.y, 28*s, 0, Math.PI*2);
+    ctx.fill();
+  });
+  clouds = clouds.filter(c => c.x < W + 300);
+}
+
+// ============ STATE ============
+let vehicles = [];
+let aircrafts = [];
+let train = null;
+let soundWaves = [];
+let stars = [];
+let clouds = [];
+let frame = 0;
+
+// Spawn logic
+function manageVehicles() {
+  if (!cfg.highway) { vehicles = []; return; }
+  const target = Math.floor(cfg.trafficDensity * 25);
+  while (vehicles.length < target) {
+    vehicles.push(new Vehicle());
+  }
+  if (vehicles.length > target * 1.5) {
+    vehicles = vehicles.slice(0, target);
+  }
+}
+
+function managePlanes() {
+  if (!cfg.planes) { aircrafts = []; return; }
+  const chance = cfg.planeFreq * 0.003 * cfg.simSpeed;
+  if (Math.random() < chance && aircrafts.length < 5) {
+    aircrafts.push(new Aircraft());
+  }
+}
+
+function spawnTrain() {
+  if (!train) { train = new Train(); cfg.train = true; document.getElementById('tog_train').checked = true; }
+}
+
+function removeTrain() { train = null; }
+
+// ============ SOUND WAVES MANAGEMENT ============
+function manageSoundWaves() {
+  if (!cfg.waves) { soundWaves = []; return; }
+
+  // From vehicles
+  if (cfg.highway) {
+    vehicles.forEach(v => {
+      if (v.waveTimer > v.waveInterval / cfg.simSpeed) {
+        v.waveTimer = 0;
+        soundWaves.push(new SoundWave(v.x, v.y, v.db, 'rgb(255,150,50)'));
+      }
+    });
+  }
+
+  // From planes
+  if (cfg.planes) {
+    aircrafts.forEach(a => {
+      if (a.waveTimer % Math.max(1, Math.floor(40 / cfg.simSpeed)) === 0) {
+        soundWaves.push(new SoundWave(a.x, a.y, a.db, 'rgb(100,150,255)'));
+      }
+    });
+  }
+
+  // From train
+  if (cfg.train && train) {
+    if (train.waveTimer % Math.max(1, Math.floor(25 / cfg.simSpeed)) === 0) {
+      soundWaves.push(new SoundWave(train.x, train.y, train.db, 'rgb(255,80,80)'));
+    }
+  }
+}
+
+// ============ STATS UPDATE ============
+function updateStats() {
+  const samplePoints = [];
+  for (let i = 0; i < 20; i++) {
+    samplePoints.push(getNoiseAt(Math.random() * W, Math.random() * H));
+  }
+
+  const peak = Math.max(...samplePoints);
+  const avg = samplePoints.reduce((a,b) => a+b, 0) / samplePoints.length;
+  const min = Math.min(...samplePoints);
+  const src = vehicles.length + aircrafts.length + (train ? 1 : 0);
+
+  const getColor = db => db > 75 ? '#ff6b6b' : db > 60 ? '#ffa94d' : '#69db7c';
+
+  document.getElementById('stat_peak').textContent = Math.round(peak);
+  document.getElementById('stat_peak').style.color = getColor(peak);
+  document.getElementById('stat_avg').textContent = Math.round(avg);
+  document.getElementById('stat_avg').style.color = getColor(avg);
+  document.getElementById('stat_min').textContent = Math.round(min);
+  document.getElementById('stat_min').style.color = getColor(min);
+  document.getElementById('stat_src').textContent = src;
+
+  // Zone stats
+  updateZones();
+  const zoneHTML = zones.map((z, i) => {
+    const db = Math.round(zoneReadings[i]);
+    const maxDb = 100;
+    const pct = Math.min(100, (db / maxDb) * 100);
+    const color = db < 55 ? '#69db7c' : db < 70 ? '#ffd43b' : '#ff6b6b';
+    return `
+      <div class="zone-stat">
+        <div class="zone-name"><span>${z.name}</span><span style="color:${color}">${db}dB</span></div>
+        <div class="zone-bar-bg"><div class="zone-bar" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+  }).join('');
+  document.getElementById('zone_stats').innerHTML = zoneHTML;
+}
+
+// ============ MINIMAP ============
+function drawMinimap() {
+  const mw = minimap.width, mh = minimap.height;
+  mctx.clearRect(0, 0, mw, mh);
+
+  // Background
+  mctx.fillStyle = '#111';
+  mctx.fillRect(0, 0, mw, mh);
+
+  // Heatmap
+  const cols = 40, rows = 20;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const px = (c / cols) * W;
+      const py = (r / rows) * H;
+      const db = getNoiseAt(px, py);
+      const mpx = (c / cols) * mw;
+      const mpy = (r / rows) * mh;
+      mctx.fillStyle = dbColor(db);
+      mctx.fillRect(mpx, mpy, mw/cols+1, mh/rows+1);
+    }
+  }
+
+  // Vehicles
+  vehicles.forEach(v => {
+    mctx.fillStyle = v.color;
+    mctx.beginPath();
+    mctx.arc(v.x / W * mw, v.y / H * mh, 2, 0, Math.PI*2);
+    mctx.fill();
+  });
+
+  // Planes
+  aircrafts.forEach(a => {
+    mctx.fillStyle = '#fff';
+    mctx.beginPath();
+    mctx.arc(a.x / W * mw, a.y / H * mh, 2, 0, Math.PI*2);
+    mctx.fill();
+  });
+
+  // Train
+  if (train) {
+    mctx.fillStyle = '#ff4444';
+    mctx.fillRect(train.x / W * mw - 5, train.y / H * mh - 2, 10, 4);
+  }
+
+  // Zone markers
+  zones.forEach((z, i) => {
+    const db = zoneReadings[i];
+    const color = db < 55 ? '#69db7c' : db < 70 ? '#ffd43b' : '#ff6b6b';
+    mctx.strokeStyle = color;
+    mctx.lineWidth = 1;
+    mctx.beginPath();
+    mctx.arc(z.xr * mw, z.yr * mh, 3, 0, Math.PI*2);
+    mctx.stroke();
+  });
+
+  // Border
+  mctx.strokeStyle = '#444';
+  mctx.lineWidth = 1;
+  mctx.strokeRect(0, 0, mw, mh);
+}
+
+// ============ MAIN LOOP ============
+function loop() {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw scene base
+  drawScene();
+  drawBackground();
+
+  // Heatmap
+  if (cfg.heatmap) {
+    heatmapTimer++;
+    if (heatmapTimer > 30) { computeHeatmap(); heatmapTimer = 0; }
+    drawHeatmap();
+  }
+
+  // Redraw scene on top (opaque elements)
+  drawScene();
+  drawBackground();
+
+  // Barriers
+  drawBarriers();
+
+  // Sound waves (behind vehicles)
+  if (cfg.waves) {
+    soundWaves.forEach(w => w.draw());
+    soundWaves = soundWaves.filter(w => !w.isDead());
+    soundWaves.forEach(w => w.update());
+  }
+
+  // Vehicles
+  manageVehicles();
+  vehicles.forEach(v => { v.update(); v.draw(); });
+  vehicles = vehicles.filter(v => !v.isDead());
+
+  // Planes
+  managePlanes();
+  aircrafts.forEach(a => { a.update(); a.draw(); });
+  aircrafts = aircrafts.filter(a => !a.isDead());
+
+  // Train
+  if (cfg.train && train) {
+    train.speed = cfg.trainSpeed / 30;
+    train.update();
+    train.draw();
+    if (train.isDead()) { train = null; }
+  } else if (!cfg.train) {
+    train = null;
+  }
+
+  // Sound waves management
+  manageSoundWaves();
+
+  // Zone labels
+  drawZoneMarkers();
+
+  // Minimap + stats (every 30 frames)
+  if (frame % 30 === 0) {
+    updateStats();
+    drawMinimap();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ============ CONTROLS ============
+function bindToggle(id, key) {
+  document.getElementById(id).addEventListener('change', e => { cfg[key] = e.target.checked; });
+}
+
+function bindRange(id, key, valId, fmt) {
+  const el = document.getElementById(id);
+  const updateVal = () => {
+    cfg[key] = parseFloat(el.value);
+    document.getElementById(valId).textContent = fmt(el.value);
+  };
+  el.addEventListener('input', updateVal);
+  updateVal();
+}
+
+bindToggle('tog_highway', 'highway');
+bindToggle('tog_planes', 'planes');
+bindToggle('tog_train', 'train');
+bindToggle('tog_walls', 'walls');
+bindToggle('tog_foam', 'foam');
+bindToggle('tog_deflect', 'deflect');
+bindToggle('tog_nature', 'nature');
+bindToggle('tog_waves', 'waves');
+bindToggle('tog_heatmap', 'heatmap');
+bindToggle('tog_labels', 'labels');
+
+bindRange('rng_traffic', 'trafficDensity', 'val_traffic', v => `${v}%`);
+bindRange('rng_speed', 'speed', 'val_speed', v => `${v} km/h`);
+bindRange('rng_planefreq', 'planeFreq', 'val_planefreq', v => `${v}%`);
+bindRange('rng_trainspeed', 'trainSpeed', 'val_trainspeed', v => `${v} km/h`);
+bindRange('rng_wallheight', 'wallHeight', 'val_wallheight', v => `${v}m`);
+bindRange('rng_foam', 'foamAbsorb', 'val_foam', v => `${v}%`);
+bindRange('rng_deflect', 'deflectAngle', 'val_deflect', v => `${v}°`);
+bindRange('rng_nature', 'natureDensity', 'val_nature', v => `${v}%`);
+bindRange('rng_simspeed', 'simSpeed', 'val_simspeed', v => `${v}x`);
+
+// Normalise range 0-100 to 0-1 for some params
+document.getElementById('rng_traffic').addEventListener('input', e => { cfg.trafficDensity = e.target.value / 100; });
+document.getElementById('rng_planefreq').addEventListener('input', e => { cfg.planeFreq = e.target.value / 100; });
+document.getElementById('rng_foam').addEventListener('input', e => { cfg.foamAbsorb = e.target.value / 100; });
+document.getElementById('rng_nature').addEventListener('input', e => { cfg.natureDensity = e.target.value / 100; });
+
+// Initial spawn
+for (let i = 0; i < 15; i++) vehicles.push(new Vehicle());
+aircrafts.push(new Aircraft());
+train = new Train();
+
+loop();
+</script>
+</body>
+</html>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; }
